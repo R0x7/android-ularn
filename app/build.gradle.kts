@@ -11,8 +11,8 @@ android {
         applicationId = "com.ularn.android"
         minSdk = 24
         targetSdk = 35
-        versionCode = 3
-        versionName = "2.1 (Ularn 1.6.3a)"
+        versionCode = 4
+        versionName = "2.2 (Ularn 1.6.3a)"
 
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")

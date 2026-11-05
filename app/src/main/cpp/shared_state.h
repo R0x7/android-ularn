@@ -75,6 +75,10 @@ typedef struct UlarnShared
   int32_t effects;              /* bit i set = effect i active (see front end) */
   int32_t class_num;            /* character class 0..7, -1 = not chosen yet */
   int32_t sex;                  /* 0 female, 1 male */
+  int32_t stats[6];             /* STR (incl. bonus), INT, WIS, CON, DEX, CHA */
+  char    level_title[40];      /* "novice explorer" ... */
+  int32_t game_time;            /* gtime (turns) */
+  int32_t hardness;             /* difficulty */
 
   /* message area (map mode) and full text page (text mode) */
   char    msg_chr[US_MSG_LINES][US_LINE_LEN + 1];

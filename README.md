@@ -34,6 +34,8 @@ Requires Android 7.0+ (API 24). Builds for arm64-v8a, armeabi-v7a and x86_64.
   scoreboard, settings and the control editor.
 - **Back button** opens the in-game menu (keyboard, edit controls, settings,
   help, save & quit).
+- **HUD:** HP bar, level and title, gold, stats and active effects above the
+  map; the game's messages below it, reflowed to a readable size.
 - **Map:** the view follows your character; pinch to zoom.
   - **Swipe** anywhere on the map to step in that direction (8-way);
     **keep holding** to keep walking, and slide your finger to steer.
@@ -64,6 +66,7 @@ the *Edit controls* action). Portrait and landscape have separate layouts.
 | In edit mode | |
 |---|---|
 | Drag a control | move it (snaps to an 8 dp grid; toggle *Snap*) |
+| *Reset* | rebuild the default layout for this screen size |
 | Drag the orange corner handle | resize |
 | Tap a selected control | open its properties |
 | **+ Button / + D-pad** | add a control |

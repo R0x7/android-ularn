@@ -370,6 +370,16 @@ static void PaintStatus(void)
   }
   S->class_num = class_num;
   S->sex = sex;
+  S->stats[0] = c[STRENGTH] + c[STREXTRA];
+  S->stats[1] = c[INTELLIGENCE];
+  S->stats[2] = c[WISDOM];
+  S->stats[3] = c[CONSTITUTION];
+  S->stats[4] = c[DEXTERITY];
+  S->stats[5] = c[CHARISMA];
+  strncpy(S->level_title, class[c[LEVEL] - 1], sizeof(S->level_title) - 1);
+  S->level_title[sizeof(S->level_title) - 1] = 0;
+  S->game_time = (int32_t) gtime;
+  S->hardness = c[HARDGAME];
 
   c[TMP] = c[STRENGTH] + c[STREXTRA];
   for (i = 0; i < 100; i++) cbak[i] = c[i];

@@ -22,14 +22,18 @@ import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
 import kotlin.math.atan2
 import kotlin.math.hypot
+import kotlin.math.roundToInt
 
 /**
  * Draws Ularn 1.6.3a's display from [GameState]:
  *
- *  map mode : HP bar, the two status lines, active effects, the tile map
- *             (follows the player; pinch to zoom; tap to step), the message
- *             lines, and tap-to-answer buttons for the current prompt;
- *  text mode: the full 80x25 text page (shops, inventory, help, scores).
+ *  map mode : a HUD (HP bar, level, gold, stats, active effects), the tile map
+ *             (follows the player; pinch to zoom; swipe/tap to move), the
+ *             game's message lines reflowed to a readable size, and
+ *             tap-to-answer buttons for the current prompt;
+ *  text mode: the game's text page (shops, inventory, help, scores), fitted
+ *             to the columns it actually uses; drag sideways if it is wider
+ *             than the screen.
  *
  * The on-screen controls sit in a separate overlay; [setReserve] tells this
  * view which edges they occupy so nothing important is drawn under them.
@@ -63,21 +67,37 @@ class GameView(context: Context) : View(context) {
     private val density = resources.displayMetrics.density
     private fun dp(v: Float) = v * density
 
-    private val atlas: Bitmap? = try {
-        context.assets.open("ularn_tiles.png").use {
-            BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inScaled = false })
-        }
-    } catch (_: Exception) { null }
-    private val atlasCols = 16
+    // ------------------------------------------------------------- tiles
+
     private val tileSrc = 32
+    private val atlasCols = 16
+
+    /**
+     * One bitmap per tile. Drawing from separate bitmaps (rather than
+     * sub-rects of the sheet) stops the GPU sampling a neighbouring tile's
+     * edge pixels when tiles are scaled, which showed as a grid of seams.
+     */
+    private val tiles: Array<Bitmap?> = run {
+        val sheet = try {
+            context.assets.open("ularn_tiles.png").use {
+                BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inScaled = false })
+            }
+        } catch (_: Exception) { null }
+        if (sheet == null) arrayOfNulls(0)
+        else Array(sheet.width / tileSrc * (sheet.height / tileSrc)) { id ->
+            val sx = (id % atlasCols) * tileSrc
+            val sy = (id / atlasCols) * tileSrc
+            Bitmap.createBitmap(sheet, sx, sy, tileSrc, tileSrc)
+        }
+    }
 
     private val tilePaint = Paint().apply { isFilterBitmap = false; isDither = false }
     private val mono = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.MONOSPACE }
     private val monoBold = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD) }
-    private val ui = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER; isFakeBoldText = true }
+    private val ui = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.SANS_SERIF }
+    private val uiBold = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val srcRect = Rect()
-    private val dstRect = RectF()
+    private val dstRect = Rect()
 
     private var reserveLeft = 0f
     private var reserveRight = 0f
@@ -91,13 +111,16 @@ class GameView(context: Context) : View(context) {
 
     // ------------------------------------------------------------ colors
 
-    private val bg = Color.rgb(10, 10, 12)
-    private val fgNormal = Color.rgb(214, 214, 208)
+    private val bg = Color.rgb(12, 12, 14)
+    private val mapBg = Color.BLACK            // same as the "unexplored" tile
+    private val fgNormal = Color.rgb(222, 222, 216)
+    private val fgDim = Color.rgb(150, 150, 150)
     private val fgRed = Color.rgb(255, 110, 100)
     private val fgGreen = Color.rgb(110, 220, 120)
     private val fgBlue = Color.rgb(120, 170, 255)
     private val accent = Color.rgb(255, 190, 60)
-    private val panel = Color.rgb(24, 24, 28)
+    private val panel = Color.rgb(22, 23, 27)
+    private val panelLine = Color.rgb(44, 46, 54)
 
     private fun fmtColor(f: Int) = when (f) {
         GameState.FMT_STANDOUT -> fgRed
@@ -109,7 +132,6 @@ class GameView(context: Context) : View(context) {
 
     // ----------------------------------------------------------- layout
 
-    /** Computed each frame; used for hit-testing. */
     private val content = RectF()
     private val mapRect = RectF()
     private var tilePx = 0f
@@ -129,6 +151,11 @@ class GameView(context: Context) : View(context) {
         override fun run() { caretOn = !caretOn; invalidate(); postDelayed(this, 530) }
     }
 
+    /** Text pages wider than the screen can be dragged sideways. */
+    private var textPanX = 0f
+    private var textPanMax = 0f
+    private var lastDisplayMode = -1
+
     override fun onAttachedToWindow() { super.onAttachedToWindow(); postDelayed(blink, 530) }
     override fun onDetachedFromWindow() { removeCallbacks(blink); endSwipe(); super.onDetachedFromWindow() }
 
@@ -137,18 +164,19 @@ class GameView(context: Context) : View(context) {
     override fun onDraw(canvas: Canvas) {
         canvas.drawColor(bg)
         content.set(reserveLeft, 0f, width - reserveRight, height - reserveBottom)
-        if (content.width() < dp(100f) || content.height() < dp(100f)) content.set(0f, 0f, width.toFloat(), height.toFloat())
+        if (content.width() < dp(120f) || content.height() < dp(120f)) content.set(0f, 0f, width.toFloat(), height.toFloat())
 
         val s = state
-        if (s == null || !s.refresh()) { drawIdle(canvas); return }
+        if (s == null || !s.refresh() || s.seq == 0) return
 
         if (s.beepCount != lastBeep) {
             if (lastBeep >= 0 && haptics) performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
             lastBeep = s.beepCount
         }
+        if (s.displayMode != lastDisplayMode) { textPanX = 0f; lastDisplayMode = s.displayMode }
 
         buildChips(s)
-        val chipH = if (chips.isEmpty()) 0f else dp(40f)
+        val chipH = if (chips.isEmpty()) 0f else dp(44f)
         val area = RectF(content.left, content.top, content.right, content.bottom - chipH)
 
         if (s.displayMode == GameState.DISPLAY_TEXT) drawTextPage(canvas, s, area)
@@ -176,18 +204,56 @@ class GameView(context: Context) : View(context) {
         canvas.drawCircle(ex, ey, dp(7f), fill)
     }
 
-    /** Before the first game the start menu covers the screen; nothing to draw. */
-    @Suppress("UNUSED_PARAMETER")
-    private fun drawIdle(canvas: Canvas) {}
+    // -------------------------------------------------------- text page
 
-    /** Text size that fits [cols] monospace columns into [w] px. */
-    private fun fitMono(cols: Int, w: Float, maxPx: Float): Float {
+    private fun drawTextPage(canvas: Canvas, s: GameState, area: RectF) {
+        val rows = s.textLines
+        // Fit the columns the page actually uses (shops ~75, inventory ~45).
+        var usedCols = 40
+        for (r in 0 until rows) {
+            var n = s.lineLen
+            while (n > 0 && s.textChar(r, n - 1) == ' ') n--
+            if (n > usedCols) usedCols = n
+        }
+        val pad = dp(10f)
         mono.textSize = 100f
         val per100 = mono.measureText("M")
-        return minOf(maxPx, w / (cols * per100) * 100f)
+        var size = (area.width() - 2 * pad) / (usedCols * per100) * 100f
+        size = size.coerceIn(dp(11f), dp(20f))      // never smaller than readable
+        mono.textSize = size
+        var lineH = mono.fontSpacing
+        if (lineH * rows > area.height() - 2 * pad) {   // but do fit vertically
+            size = maxOf(dp(8f), size * (area.height() - 2 * pad) / (lineH * rows))
+            mono.textSize = size
+            lineH = mono.fontSpacing
+        }
+        monoBold.textSize = size
+        val cellW = mono.measureText("M")
+        val pageW = cellW * usedCols
+        textPanMax = maxOf(0f, pageW - (area.width() - 2 * pad))
+        textPanX = textPanX.coerceIn(0f, textPanMax)
+        val x0 = area.left + pad + (if (textPanMax > 0) -textPanX else (area.width() - 2 * pad - pageW) / 2f)
+        val y0 = area.top + pad
+
+        canvas.save()
+        canvas.clipRect(area)
+        for (r in 0 until rows) {
+            val base = y0 + r * lineH - mono.fontMetrics.ascent
+            drawLine(canvas, x0, base, cellW, s.lineLen, { s.textChar(r, it) }, { s.textFmt(r, it) })
+        }
+        if (s.caret) drawCaret(canvas, x0 + (s.cursorX - 1) * cellW, y0 + (s.cursorY - 1) * lineH - mono.fontMetrics.ascent, cellW)
+        canvas.restore()
+
+        if (textPanMax > 0) {   // scroll hint
+            val track = area.width() - 2 * pad
+            val thumb = track * (track / pageW)
+            val tx = area.left + pad + (track - thumb) * (textPanX / textPanMax)
+            fill.color = Color.argb(90, 255, 255, 255)
+            canvas.drawRoundRect(tx, area.bottom - dp(5f), tx + thumb, area.bottom - dp(2f), dp(2f), dp(2f), fill)
+        }
     }
 
-    private fun drawLine(canvas: Canvas, x: Float, baseline: Float, cellW: Float, lineH: Float,
+    private fun drawLine(canvas: Canvas, x: Float, baseline: Float, cellW: Float,
                          n: Int, ch: (Int) -> Char, fmt: (Int) -> Int) {
         val one = CharArray(1)
         for (col in 0 until n) {
@@ -200,7 +266,6 @@ class GameView(context: Context) : View(context) {
             }
             if (c != ' ' && c.code != 0) {
                 val p = if (f == GameState.FMT_BOLD) monoBold else mono
-                p.textSize = mono.textSize
                 p.color = if (f == GameState.FMT_INVERSE) bg else fmtColor(f)
                 one[0] = c
                 canvas.drawText(one, 0, 1, cx, baseline, p)
@@ -214,97 +279,157 @@ class GameView(context: Context) : View(context) {
         canvas.drawRect(x, baseline + dp(1f), x + cellW, baseline + dp(3f), fill)
     }
 
-    private fun drawTextPage(canvas: Canvas, s: GameState, area: RectF) {
-        val cols = s.lineLen
-        val rows = s.textLines
-        var size = fitMono(cols, area.width() - dp(8f), dp(22f))
-        mono.textSize = size
-        var lineH = mono.fontSpacing
-        if (lineH * rows > area.height()) {          // also fit vertically
-            size *= area.height() / (lineH * rows)
-            mono.textSize = size
-            lineH = mono.fontSpacing
-        }
-        val cellW = mono.measureText("M")
-        val x0 = area.left + (area.width() - cellW * cols) / 2f
-        val y0 = area.top + maxOf(0f, (area.height() - lineH * rows) / 2f)
-        for (r in 0 until rows) {
-            val base = y0 + r * lineH - mono.fontMetrics.ascent
-            drawLine(canvas, x0, base, cellW, lineH, cols, { s.textChar(r, it) }, { s.textFmt(r, it) })
-        }
-        if (s.caret) drawCaret(canvas, x0 + (s.cursorX - 1) * cellW, y0 + (s.cursorY - 1) * lineH - mono.fontMetrics.ascent, cellW)
-    }
+    // --------------------------------------------------------- map mode
 
     private fun drawMapMode(canvas: Canvas, s: GameState, area: RectF) {
-        val pad = dp(4f)
-        val cols = s.lineLen
-        val size = fitMono(cols, area.width() - 2 * pad, dp(15f))
-        mono.textSize = size
-        val lineH = mono.fontSpacing
-        val cellW = mono.measureText("M")
-        val x0 = area.left + pad
+        val pad = dp(8f)
         var y = area.top + pad
+        val x0 = area.left + pad
+        val x1 = area.right - pad
+        val w = x1 - x0
 
-        // HP bar
+        // --- HUD line 1: HP bar + numbers
         val hpFrac = if (s.hpMax > 0) (s.hp.toFloat() / s.hpMax).coerceIn(0f, 1f) else 0f
-        fill.color = panel
-        canvas.drawRoundRect(x0, y, area.right - pad, y + dp(5f), dp(3f), dp(3f), fill)
-        fill.color = when {
-            hpFrac > 0.6f -> Color.rgb(90, 200, 110)
-            hpFrac > 0.3f -> Color.rgb(240, 190, 60)
-            else -> Color.rgb(235, 80, 70)
+        uiBold.textSize = dp(13f); ui.textSize = dp(12f)
+        val hpText = "HP ${s.hp}/${s.hpMax}"
+        uiBold.color = Color.WHITE
+        val lineH = dp(20f)
+        canvas.drawText(hpText, x0, y + lineH / 2 - (uiBold.descent() + uiBold.ascent()) / 2, uiBold)
+        val barL = x0 + uiBold.measureText("HP 999/999") + dp(6f)
+        val right1 = "Gold ${s.gold}"
+        ui.color = accent
+        val rw = ui.measureText(right1)
+        canvas.drawText(right1, x1 - rw, y + lineH / 2 - (ui.descent() + ui.ascent()) / 2, ui)
+        val barR = x1 - rw - dp(10f)
+        if (barR > barL + dp(30f)) {
+            fill.color = panelLine
+            canvas.drawRoundRect(barL, y + lineH / 2 - dp(4f), barR, y + lineH / 2 + dp(4f), dp(4f), dp(4f), fill)
+            fill.color = when {
+                hpFrac > 0.6f -> Color.rgb(90, 200, 110)
+                hpFrac > 0.3f -> Color.rgb(240, 190, 60)
+                else -> Color.rgb(235, 80, 70)
+            }
+            canvas.drawRoundRect(barL, y + lineH / 2 - dp(4f), barL + (barR - barL) * hpFrac, y + lineH / 2 + dp(4f), dp(4f), dp(4f), fill)
         }
-        canvas.drawRoundRect(x0, y, x0 + (area.right - pad - x0) * hpFrac, y + dp(5f), dp(3f), dp(3f), fill)
-        y += dp(8f)
+        y += lineH
 
-        // status lines (the original Ularn layout)
-        mono.color = fgNormal
-        for (line in listOf(s.status1, s.status2)) {
-            canvas.drawText(line, x0, y - mono.fontMetrics.ascent, mono)
-            y += lineH
-        }
+        // --- HUD line 2: level / title / where
+        ui.color = fgNormal
+        val where = if (s.levelName == "H") "Home" else "Level ${s.levelName}"
+        val line2 = "Lv ${s.playerLevel} ${s.levelTitle}  ·  Exp ${s.exp}  ·  $where"
+        drawFitted(canvas, line2, x0, y, w, lineH, ui)
+        y += lineH
 
-        // effects
+        // --- HUD line 3: stats
+        val stats = (0 until 6).joinToString("  ") { "${GameState.STAT_NAMES[it]} ${s.stat(it)}" } +
+            "   AC ${s.ac}  WC ${s.wc}  Sp ${s.spells}/${s.spellMax}"
+        ui.color = fgDim
+        drawFitted(canvas, stats, x0, y, w, lineH, ui)
+        y += lineH
+
+        // --- effects
         val active = GameState.EFFECT_NAMES.filterIndexed { i, _ -> s.effects and (1 shl i) != 0 }
         if (active.isNotEmpty()) {
             ui.textSize = dp(11f)
             var cx = x0
             val h = dp(18f)
             for (name in active) {
-                val w = ui.measureText(name) + dp(12f)
-                if (cx + w > area.right - pad) break
+                val cw = ui.measureText(name) + dp(12f)
+                if (cx + cw > x1) break
                 fill.color = Color.argb(200, 60, 50, 20)
-                canvas.drawRoundRect(cx, y + dp(2f), cx + w, y + dp(2f) + h, h / 2, h / 2, fill)
+                canvas.drawRoundRect(cx, y + dp(1f), cx + cw, y + dp(1f) + h, h / 2, h / 2, fill)
                 ui.color = accent
-                canvas.drawText(name, cx + w / 2, y + dp(2f) + h / 2 - (ui.descent() + ui.ascent()) / 2, ui)
-                cx += w + dp(4f)
+                canvas.drawText(name, cx + dp(6f), y + dp(1f) + h / 2 - (ui.descent() + ui.ascent()) / 2, ui)
+                cx += cw + dp(4f)
             }
             y += h + dp(4f)
         }
+        y += dp(2f)
 
-        // message lines at the bottom of the area
-        val msgTop = area.bottom - pad - lineH * s.msgLines
+        // --- messages: the game's 5x80 message lines, reflowed
+        val msgLineH = dp(17f)
+        val msgPad = dp(6f)
+        val msgLines = 4
+        val msgTop = area.bottom - pad - msgLines * msgLineH - 2 * msgPad
         fill.color = panel
-        canvas.drawRect(area.left, msgTop - dp(2f), area.right, area.bottom, fill)
-        for (r in 0 until s.msgLines) {
-            val base = msgTop + r * lineH - mono.fontMetrics.ascent
-            drawLine(canvas, x0, base, cellW, lineH, cols, { s.msgChar(r, it) }, { s.msgFmt(r, it) })
-        }
-        if (s.caret) drawCaret(canvas, x0 + (s.cursorX - 1) * cellW, msgTop + (s.cursorY - 1) * lineH - mono.fontMetrics.ascent, cellW)
+        canvas.drawRoundRect(area.left + dp(4f), msgTop, area.right - dp(4f), area.bottom - pad + dp(2f), dp(8f), dp(8f), fill)
+        drawMessages(canvas, s, x0, msgTop + msgPad, w, msgLineH, msgLines)
 
-        // map between status and messages
-        mapRect.set(area.left, y + dp(2f), area.right, msgTop - dp(4f))
+        // --- map between HUD and messages
+        mapRect.set(area.left, y, area.right, msgTop - dp(6f))
         drawMap(canvas, s)
     }
 
+    private fun drawFitted(canvas: Canvas, text: String, x: Float, top: Float, w: Float, h: Float, p: Paint) {
+        val base = p.textSize
+        val tw = p.measureText(text)
+        if (tw > w) p.textSize = maxOf(dp(9f), base * w / tw)
+        canvas.drawText(text, x, top + h / 2 - (p.descent() + p.ascent()) / 2, p)
+        p.textSize = base
+    }
+
+    private fun drawMessages(canvas: Canvas, s: GameState, x: Float, top: Float, w: Float, lineH: Float, maxLines: Int) {
+        ui.textSize = dp(13f)
+        ui.color = fgNormal
+        val caretRow = s.cursorY - 1
+        val caretCol = s.cursorX - 1
+
+        // Wrap each source line; remember where the caret lands.
+        data class Seg(val text: String, val fmt: Int, val caretAt: Int)
+        val out = ArrayList<Seg>()
+        for (r in 0 until s.msgLines) {
+            var n = s.lineLen
+            while (n > 0 && s.msgChar(r, n - 1) == ' ') n--
+            val wantCaret = s.caret && r == caretRow
+            if (n == 0 && !wantCaret) continue
+            val chars = CharArray(n) { s.msgChar(r, it) }
+            val fmt = (0 until n).firstOrNull { s.msgFmt(r, it) != GameState.FMT_NORMAL && chars[it] != ' ' }?.let { s.msgFmt(r, it) } ?: GameState.FMT_NORMAL
+            var start = 0
+            while (start < n || (wantCaret && start == 0 && n == 0)) {
+                var end = n
+                while (end > start && ui.measureText(chars, start, end - start) > w) {
+                    val sp = chars.lastIndexOfSpace(start, end - 1)
+                    end = if (sp > start) sp else end - 1
+                }
+                if (end == start) end = minOf(n, start + 1)
+                val caret = if (wantCaret && caretCol >= start && (caretCol < end || end == n)) caretCol - start else -1
+                out += Seg(String(chars, start, end - start), fmt, caret)
+                start = end
+                while (start < n && chars[start] == ' ') start++
+                if (n == 0) break
+            }
+        }
+        val shown = if (out.size > maxLines) out.subList(out.size - maxLines, out.size) else out
+        var yy = top
+        for (seg in shown) {
+            ui.color = fmtColor(seg.fmt)
+            val base = yy + lineH / 2 - (ui.descent() + ui.ascent()) / 2
+            canvas.drawText(seg.text, x, base, ui)
+            if (seg.caretAt >= 0 && caretOn) {
+                val cx = x + ui.measureText(seg.text, 0, minOf(seg.caretAt, seg.text.length))
+                fill.color = accent
+                canvas.drawRect(cx, base + dp(1f), cx + dp(8f), base + dp(3f), fill)
+            }
+            yy += lineH
+        }
+    }
+
+    private fun CharArray.lastIndexOfSpace(from: Int, to: Int): Int {
+        var i = to
+        while (i >= from) { if (this[i] == ' ') return i; i-- }
+        return -1
+    }
+
     private fun defaultTilePx(fitAll: Float): Float {
-        val pref = if (tileDp > 0f) dp(tileDp) else maxOf(fitAll, dp(26f))
+        val pref = if (tileDp > 0f) dp(tileDp) else maxOf(fitAll, dp(30f))
         return pref.coerceIn(fitAll, dp(80f))
     }
 
     private fun drawMap(canvas: Canvas, s: GameState) {
-        val atlas = atlas ?: return
-        if (mapRect.height() < dp(20f)) return
+        if (tiles.isEmpty() || mapRect.height() < dp(20f)) return
+        fill.color = mapBg
+        canvas.drawRect(mapRect, fill)
+
         val fitAll = minOf(mapRect.width() / s.mapW, mapRect.height() / s.mapH)
         tilePx = defaultTilePx(fitAll)
         val t = tilePx
@@ -323,25 +448,28 @@ class GameView(context: Context) : View(context) {
         val y0 = (camY / t).toInt().coerceAtLeast(0)
         val x1 = minOf(s.mapW - 1, ((camX + mapRect.width()) / t).toInt())
         val y1 = minOf(s.mapH - 1, ((camY + mapRect.height()) / t).toInt())
-        for (ty in y0..y1) for (tx in x0..x1) {
-            val left = mapRect.left + tx * t - camX
-            val top = mapRect.top + ty * t - camY
-            dstRect.set(left, top, left + t + 0.5f, top + t + 0.5f)
-            drawTile(canvas, atlas, s.tile(tx, ty))
-            val o = s.overlay(tx, ty)
-            if (o >= 0) drawTile(canvas, atlas, o)
-            if (tx == s.playerX && ty == s.playerY && s.playerCursor) drawTile(canvas, atlas, GameState.TILE_CURSOR)
+        // Whole-pixel edges, each tile ending exactly where the next begins: no seams.
+        val originX = mapRect.left - camX
+        val originY = mapRect.top - camY
+        for (ty in y0..y1) {
+            val top = (originY + ty * t).roundToInt()
+            val bottom = (originY + (ty + 1) * t).roundToInt()
+            for (tx in x0..x1) {
+                val left = (originX + tx * t).roundToInt()
+                val right = (originX + (tx + 1) * t).roundToInt()
+                dstRect.set(left, top, right, bottom)
+                drawTile(canvas, s.tile(tx, ty))
+                val o = s.overlay(tx, ty)
+                if (o >= 0) drawTile(canvas, o)
+                if (tx == s.playerX && ty == s.playerY && s.playerCursor) drawTile(canvas, GameState.TILE_CURSOR)
+            }
         }
         canvas.restore()
     }
 
-    private fun drawTile(canvas: Canvas, atlas: Bitmap, id: Int) {
-        if (id < 0) return
-        val sx = (id % atlasCols) * tileSrc
-        val sy = (id / atlasCols) * tileSrc
-        if (sy + tileSrc > atlas.height) return
-        srcRect.set(sx, sy, sx + tileSrc, sy + tileSrc)
-        canvas.drawBitmap(atlas, srcRect, dstRect, tilePaint)
+    private fun drawTile(canvas: Canvas, id: Int) {
+        val bmp = tiles.getOrNull(id) ?: return
+        canvas.drawBitmap(bmp, null, dstRect, tilePaint)
     }
 
     // ---------------------------------------------------------- answers
@@ -378,28 +506,33 @@ class GameView(context: Context) : View(context) {
                 chips += Chip("⌨ Type", null) { onToggleKeyboard?.invoke() }
                 chips += Chip("Enter", byteArrayOf(13))
             }
-            GameState.INPUT_DIR -> chips += Chip("Pick a direction", null)
+            GameState.INPUT_DIR -> chips += Chip("Swipe or press a direction", null)
         }
     }
 
     private fun drawChips(canvas: Canvas, bar: RectF) {
-        val gap = dp(4f)
+        val gap = dp(6f)
         val n = chips.size
-        val w = ((bar.width() - gap * (n + 1)) / n).coerceAtMost(dp(96f))
+        val w = ((bar.width() - gap * (n + 1)) / n).coerceAtMost(dp(110f))
         val total = n * w + (n - 1) * gap
         var x = bar.centerX() - total / 2
-        ui.textSize = dp(13f)
         for (chip in chips) {
             chip.rect.set(x, bar.top + gap, x + w, bar.bottom - gap)
             val enabled = chip.keys != null || chip.action != null
-            fill.color = if (enabled) Color.argb(230, 50, 52, 62) else Color.argb(120, 50, 52, 62)
+            fill.color = if (enabled) Color.argb(235, 52, 54, 64) else Color.argb(0, 0, 0, 0)
             canvas.drawRoundRect(chip.rect, dp(10f), dp(10f), fill)
-            ui.color = if (enabled) Color.WHITE else Color.argb(170, 255, 255, 255)
-            var size = dp(13f)
-            ui.textSize = size
-            val tw = ui.measureText(chip.label)
-            if (tw > w - dp(6f)) { size *= (w - dp(6f)) / tw; ui.textSize = size }
-            canvas.drawText(chip.label, chip.rect.centerX(), chip.rect.centerY() - (ui.descent() + ui.ascent()) / 2, ui)
+            if (enabled) {
+                fill.style = Paint.Style.STROKE; fill.strokeWidth = dp(1f); fill.color = Color.argb(80, 255, 255, 255)
+                canvas.drawRoundRect(chip.rect, dp(10f), dp(10f), fill)
+                fill.style = Paint.Style.FILL
+            }
+            uiBold.color = if (enabled) Color.WHITE else Color.argb(170, 255, 255, 255)
+            var size = dp(14f)
+            uiBold.textSize = size
+            val tw = uiBold.measureText(chip.label)
+            if (tw > w - dp(8f)) { size *= (w - dp(8f)) / tw; uiBold.textSize = size }
+            canvas.drawText(chip.label, chip.rect.centerX() - uiBold.measureText(chip.label) / 2,
+                chip.rect.centerY() - (uiBold.descent() + uiBold.ascent()) / 2, uiBold)
             x += w + gap
         }
     }
@@ -437,12 +570,21 @@ class GameView(context: Context) : View(context) {
         val dx = tx - s.playerX
         val dy = ty - s.playerY
         if (dx == 0 && dy == 0) return null
-        // 8 sectors by angle so far taps still pick a sensible direction
         return sectorDir(dx.toFloat(), dy.toFloat())
     }
 
     private val gestures = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
         override fun onDown(e: MotionEvent) = true
+
+        override fun onScroll(e1: MotionEvent?, e2: MotionEvent, dx: Float, dy: Float): Boolean {
+            val s = state ?: return false
+            if (s.displayMode == GameState.DISPLAY_TEXT && textPanMax > 0f) {
+                textPanX = (textPanX + dx).coerceIn(0f, textPanMax)
+                invalidate()
+                return true
+            }
+            return false
+        }
 
         override fun onSingleTapUp(e: MotionEvent): Boolean {
             if (pinching) return true

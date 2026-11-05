@@ -19,6 +19,10 @@ add_library(ularn_game STATIC
 # reference inside this library; only JNI entry points are exported.
 target_compile_options(ularn_game PRIVATE
         -fvisibility=hidden
+        # The game assumes `char` is signed (x86/m68k), e.g. its direction
+        # tables hold -1 in chars. On ARM `char` is unsigned by default, which
+        # turned every move with a negative component into "off the map".
+        -fsigned-char
         -std=gnu99
         -w
         -Wno-implicit-function-declaration

@@ -12,19 +12,20 @@ import org.json.JSONObject
 class LayoutStore(context: Context) {
     private val prefs = context.getSharedPreferences("controls", Context.MODE_PRIVATE)
 
-    fun load(landscape: Boolean): ControlLayout {
+    /** @param wDp,hDp the screen size, used to build the default layout. */
+    fun load(landscape: Boolean, wDp: Float, hDp: Float): ControlLayout {
         val json = prefs.getString(key(landscape), null)
         if (json != null) runCatching { return fromJson(json) }
-        return if (landscape) DefaultLayouts.landscape() else DefaultLayouts.portrait()
+        return if (landscape) DefaultLayouts.landscape(wDp, hDp) else DefaultLayouts.portrait(wDp, hDp)
     }
 
     fun save(landscape: Boolean, layout: ControlLayout) {
         prefs.edit().putString(key(landscape), toJson(layout)).apply()
     }
 
-    fun reset(landscape: Boolean): ControlLayout {
+    fun reset(landscape: Boolean, wDp: Float, hDp: Float): ControlLayout {
         prefs.edit().remove(key(landscape)).apply()
-        return load(landscape)
+        return load(landscape, wDp, hDp)
     }
 
     // ---- named profiles

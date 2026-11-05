@@ -25,9 +25,10 @@ class GameState(private val shared: ByteBuffer, layout: IntArray) {
         const val GOLD = 21; const val PLEVEL = 22; const val AC = 23; const val WC = 24
         const val EXP = 25; const val DLEVEL = 26; const val LEVELNAME = 27
         const val EFFECTS = 28; const val CLASS = 29; const val SEX = 30
-        const val MSG_CHR = 31; const val MSG_FMT = 32; const val TEXT_CHR = 33; const val TEXT_FMT = 34
-        const val MAP_W = 35; const val MAP_H = 36; const val LINE_LEN = 37
-        const val MSG_LINES = 38; const val TEXT_LINES = 39
+        const val STATS = 31; const val LEVEL_TITLE = 32; const val GAME_TIME = 33; const val HARDNESS = 34
+        const val MSG_CHR = 35; const val MSG_FMT = 36; const val TEXT_CHR = 37; const val TEXT_FMT = 38
+        const val MAP_W = 39; const val MAP_H = 40; const val LINE_LEN = 41
+        const val MSG_LINES = 42; const val TEXT_LINES = 43
     }
 
     private val off = layout
@@ -72,6 +73,15 @@ class GameState(private val shared: ByteBuffer, layout: IntArray) {
     val playerLevel get() = i(F.PLEVEL)
     val effects get() = i(F.EFFECTS)
     val classNum get() = i(F.CLASS)
+    val gameTime get() = i(F.GAME_TIME)
+    val hardness get() = i(F.HARDNESS)
+    val ac get() = i(F.AC)
+    val wc get() = i(F.WC)
+    val exp get() = i(F.EXP)
+
+    /** STR (with bonus), INT, WIS, CON, DEX, CHA. */
+    fun stat(i: Int): Int = buf.getInt(off[F.STATS] + 4 * i)
+    val levelTitle: String get() = cString(off[F.LEVEL_TITLE], 40)
 
     val answers: String get() = cString(off[F.ANSWERS], 64)
     val status1: String get() = cString(off[F.STATUS1], 96)
@@ -116,6 +126,8 @@ class GameState(private val shared: ByteBuffer, layout: IntArray) {
         const val FMT_INVERSE = 5
 
         const val TILE_CURSOR = 174
+
+        val STAT_NAMES = listOf("STR", "INT", "WIS", "CON", "DEX", "CHA")
 
         /** Bit i of [effects], in the order the front end reports them. */
         val EFFECT_NAMES = listOf(

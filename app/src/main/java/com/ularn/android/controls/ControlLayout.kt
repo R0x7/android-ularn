@@ -85,59 +85,103 @@ object DpadMath {
         if (keys.length == 1 && keys[0] in 'a'..'z') keys.uppercase() else keys
 }
 
+/**
+ * Default layouts, computed for the actual screen size (in dp) so every
+ * control sits on an 8 dp grid with even gaps. Positions are stored as
+ * fractions of the screen, like user-made layouts.
+ */
 object DefaultLayouts {
 
-    fun portrait(): ControlLayout = ControlLayout(
-        mutableListOf(
-            ControlSpec("dpad", ControlType.DPAD, "", cx = 0.27f, cy = 0.785f, widthDp = 170f, heightDp = 170f, repeat = true),
-            // right-hand action cluster
-            btn("esc", "Esc", "\\e", 0.60f, 0.645f),
-            btn("ret", "⏎", "\\n", 0.76f, 0.645f),
-            btn("spc", "Spc", "\\s", 0.91f, 0.645f),
-            btn("inv", "Inv", "i", 0.60f, 0.735f),
-            btn("cast", "Cast", "c", 0.76f, 0.735f),
-            btn("quaff", "Quaff", "q", 0.91f, 0.735f),
-            btn("read", "Read", "r", 0.60f, 0.825f),
-            btn("wield", "Wield", "w", 0.76f, 0.825f),
-            btn("wear", "Wear", "W", 0.91f, 0.825f),
-            btn("drop", "Drop", "d", 0.60f, 0.915f),
-            btn("eat", "Eat", "e", 0.76f, 0.915f),
-            ControlSpec("run", ControlType.BUTTON, "Run", action = ButtonAction.RUN, cx = 0.91f, cy = 0.915f, widthDp = 52f, heightDp = 46f),
-            // strip just below the map
-            small("kbd", "⌨", ButtonAction.KEYBOARD, 0.08f, 0.565f),
-            btn("help", "?", "?", 0.20f, 0.565f, 44f, 38f),
-            btn("disc", "Known", "\\\\", 0.34f, 0.565f, 56f, 38f),
-            btn("rest", "Rest", ".", 0.48f, 0.565f, 52f, 38f),
-            btn("save", "Save", "S", 0.62f, 0.565f, 52f, 38f),
-            btn("tele", "Z", "Z", 0.75f, 0.565f, 44f, 38f),
-            small("menu", "☰", ButtonAction.MENU, 0.92f, 0.565f),
-        )
+    private const val G = 8f      // grid / gap
+    private const val M = 12f     // screen margin
+
+    private class Builder(val w: Float, val h: Float) {
+        val list = mutableListOf<ControlSpec>()
+        fun snap(v: Float) = Math.round(v / G) * G
+
+        fun btn(id: String, label: String, keys: String, cxDp: Float, cyDp: Float, wDp: Float, hDp: Float,
+                action: ButtonAction = ButtonAction.KEYS, shape: ButtonShape = ButtonShape.ROUNDED) {
+            list += ControlSpec(id, ControlType.BUTTON, label, keys, action, cxDp / w, cyDp / h, wDp, hDp, shape = shape)
+        }
+
+        fun dpad(cxDp: Float, cyDp: Float, dia: Float) {
+            list += ControlSpec("dpad", ControlType.DPAD, "", cx = cxDp / w, cy = cyDp / h, widthDp = dia, heightDp = dia, repeat = true)
+        }
+
+        /** Lays a grid of buttons out from its bottom-right corner. */
+        fun grid(items: List<Triple<String, String, String>>, cols: Int, rightDp: Float, bottomDp: Float,
+                 bw: Float, bh: Float, actions: Map<String, ButtonAction> = emptyMap()) {
+            val rows = (items.size + cols - 1) / cols
+            items.forEachIndexed { i, (id, label, keys) ->
+                val c = i % cols
+                val r = i / cols
+                val cx = rightDp - bw / 2 - (cols - 1 - c) * (bw + G)
+                val cy = bottomDp - bh / 2 - (rows - 1 - r) * (bh + G)
+                btn(id, label, keys, cx, cy, bw, bh, actions[id] ?: ButtonAction.KEYS)
+            }
+        }
+
+        /** Spreads buttons evenly across [leftDp, rightDp]. */
+        fun row(items: List<Triple<String, String, String>>, leftDp: Float, rightDp: Float, cyDp: Float,
+                bw: Float, bh: Float, actions: Map<String, ButtonAction> = emptyMap(), round: Set<String> = emptySet()) {
+            val n = items.size
+            val span = rightDp - leftDp - bw
+            items.forEachIndexed { i, (id, label, keys) ->
+                val cx = leftDp + bw / 2 + if (n > 1) span * i / (n - 1) else span / 2
+                btn(id, label, keys, cx, cyDp, bw, bh, actions[id] ?: ButtonAction.KEYS,
+                    if (id in round) ButtonShape.CIRCLE else ButtonShape.ROUNDED)
+            }
+        }
+    }
+
+    private val ACTIONS = listOf(
+        Triple("esc", "Esc", "\\e"), Triple("ret", "Enter", "\\n"), Triple("spc", "Space", "\\s"),
+        Triple("inv", "Inv", "i"), Triple("cast", "Cast", "c"), Triple("quaff", "Quaff", "q"),
+        Triple("read", "Read", "r"), Triple("wield", "Wield", "w"), Triple("wear", "Wear", "W"),
+        Triple("drop", "Drop", "d"), Triple("eat", "Eat", "e"), Triple("run", "Run", ""),
     )
-
-    fun landscape(): ControlLayout = ControlLayout(
-        mutableListOf(
-            ControlSpec("dpad", ControlType.DPAD, "", cx = 0.105f, cy = 0.66f, widthDp = 170f, heightDp = 170f, repeat = true),
-            ControlSpec("run", ControlType.BUTTON, "Run", action = ButtonAction.RUN, cx = 0.105f, cy = 0.20f, widthDp = 60f, heightDp = 44f),
-            small("kbd", "⌨", ButtonAction.KEYBOARD, 0.045f, 0.07f),
-            small("menu", "☰", ButtonAction.MENU, 0.955f, 0.07f),
-            btn("esc", "Esc", "\\e", 0.905f, 0.22f, 46f, 44f),
-            btn("ret", "⏎", "\\n", 0.97f, 0.22f, 46f, 44f),
-            btn("spc", "Spc", "\\s", 0.938f, 0.35f, 92f, 40f),
-            btn("inv", "Inv", "i", 0.905f, 0.48f, 46f, 44f),
-            btn("cast", "Cast", "c", 0.97f, 0.48f, 46f, 44f),
-            btn("quaff", "Quaff", "q", 0.905f, 0.61f, 46f, 44f),
-            btn("read", "Read", "r", 0.97f, 0.61f, 46f, 44f),
-            btn("wield", "Wield", "w", 0.905f, 0.74f, 46f, 44f),
-            btn("wear", "Wear", "W", 0.97f, 0.74f, 46f, 44f),
-            btn("drop", "Drop", "d", 0.905f, 0.87f, 46f, 44f),
-            btn("eat", "Eat", "e", 0.97f, 0.87f, 46f, 44f),
-        ),
-        opacity = 0.45f,
+    private val UTILITY = listOf(
+        Triple("kbd", "⌨", ""), Triple("help", "?", "?"), Triple("disc", "Known", "\\\\"),
+        Triple("rest", "Rest", "."), Triple("save", "Save", "S"), Triple("tele", "Tele", "Z"),
+        Triple("menu", "☰", ""),
     )
+    private val SPECIAL = mapOf("run" to ButtonAction.RUN, "kbd" to ButtonAction.KEYBOARD, "menu" to ButtonAction.MENU)
 
-    private fun btn(id: String, label: String, keys: String, cx: Float, cy: Float, w: Float = 54f, h: Float = 46f) =
-        ControlSpec(id, ControlType.BUTTON, label, keys, ButtonAction.KEYS, cx, cy, w, h)
+    /** @param w,h screen size in dp. */
+    fun portrait(w: Float, h: Float): ControlLayout {
+        val b = Builder(w, h)
+        val bw = b.snap(((w - 2 * M - G) * 0.5f - 2 * G) / 3).coerceIn(48f, 72f)   // 3 columns in the right half
+        val bh = 48f
+        val gridW = 3 * bw + 2 * G
+        val gridH = 4 * bh + 3 * G
+        val bottom = h - M
+        // right: 3x4 action grid
+        b.grid(ACTIONS, 3, w - M, bottom, bw, bh, SPECIAL)
+        // left: d-pad, as big as the remaining width allows
+        val dia = b.snap(minOf(w - 2 * M - gridW - 2 * G, gridH, 200f))
+        b.dpad(M + dia / 2, bottom - gridH / 2, dia)
+        // utility row above both
+        val rowCy = bottom - gridH - G - 20f
+        val uw = b.snap(((w - 2 * M) - 6 * G) / 7).coerceIn(40f, 60f)
+        b.row(UTILITY, M, w - M, rowCy, uw, 40f, SPECIAL, setOf("kbd", "menu"))
+        return ControlLayout(b.list)
+    }
 
-    private fun small(id: String, label: String, action: ButtonAction, cx: Float, cy: Float) =
-        ControlSpec(id, ControlType.BUTTON, label, "", action, cx, cy, 44f, 40f, shape = ButtonShape.CIRCLE)
+    fun landscape(w: Float, h: Float): ControlLayout {
+        val b = Builder(w, h)
+        val bw = 60f
+        val bh = b.snap(((h - 2 * M) - 4 * G) / 5).coerceIn(40f, 52f)
+        // right: 3x5 grid of actions + utilities
+        val items = ACTIONS.filter { it.first != "run" } + UTILITY.filter { it.first in setOf("rest", "save", "disc", "tele") }
+        val rows = (items.size + 2) / 3
+        val gridH = rows * bh + (rows - 1) * G
+        b.grid(items, 3, w - M, h / 2 + gridH / 2, bw, bh, SPECIAL)
+        // left: d-pad bottom-left, run above it, small round buttons top-left
+        val dia = b.snap(minOf(h - 2 * M - 56f - G, 190f))
+        b.dpad(M + dia / 2, h - M - dia / 2, dia)
+        b.btn("run", "Run", "", M + dia / 2, h - M - dia - G - 22f, 64f, 44f, ButtonAction.RUN)
+        b.row(listOf(Triple("kbd", "⌨", ""), Triple("help", "?", "?"), Triple("menu", "☰", "")),
+            M, M + dia, M + 20f, 40f, 40f, SPECIAL, setOf("kbd", "menu", "help"))
+        return ControlLayout(b.list, opacity = 0.5f)
+    }
 }

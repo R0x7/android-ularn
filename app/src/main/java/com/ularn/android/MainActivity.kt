@@ -86,7 +86,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         // Recompute the map area after the new size is known (rotation,
         // split screen, foldables) - not before, as onConfigurationChanged is.
         overlay.addOnLayoutChangeListener { _, l, t, r, b, ol, ot, or_, ob ->
-            if (r - l != or_ - ol || b - t != ob - ot) updateMapReserve()
+            if (r - l != or_ - ol || b - t != ob - ot) { ensureLayoutLoaded(); updateMapReserve() }
         }
 
         session = GameSession(
@@ -180,11 +180,26 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         }
     }
 
+    /** Which orientation the overlay's current layout was loaded for. */
+    private var layoutLoadedFor: Boolean? = null
+
     private fun applyOrientation(cfg: Configuration) {
         landscape = cfg.orientation == Configuration.ORIENTATION_LANDSCAPE
-        overlay.layout = store.load(landscape)
-        game.haptics = overlay.layout.haptics
+        layoutLoadedFor = null
+        ensureLayoutLoaded()
         updateMapReserve()
+    }
+
+    private val overlayWidthDp get() = overlay.width / density
+    private val overlayHeightDp get() = overlay.height / density
+
+    /** Loads the layout for the current orientation once the overlay has a size. */
+    private fun ensureLayoutLoaded() {
+        if (layoutLoadedFor == landscape || overlay.width == 0 || overlay.height == 0) return
+        if (overlay.editMode) return
+        overlay.layout = store.load(landscape, overlayWidthDp, overlayHeightDp)
+        game.haptics = overlay.layout.haptics
+        layoutLoadedFor = landscape
     }
 
     /**
@@ -347,7 +362,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         add(pill("Reset") {
             AlertDialog.Builder(this)
                 .setMessage("Reset the ${if (landscape) "landscape" else "portrait"} layout to the default?")
-                .setPositiveButton("Reset") { _, _ -> overlay.layout = store.reset(landscape); refreshEditBar() }
+                .setPositiveButton("Reset") { _, _ -> overlay.layout = store.reset(landscape, overlayWidthDp, overlayHeightDp); refreshEditBar() }
                 .setNegativeButton("Cancel", null).show()
         })
         add(pill("⇅") { editBarAtTop = !editBarAtTop; positionEditBar() })
