@@ -24,13 +24,32 @@ android {
         }
     }
 
+    // CI signs every build with one fixed key, taken from GitHub Actions
+    // secrets, so each new APK installs over the previous one (Android rejects
+    // updates signed with a different key, and uninstalling deletes saved
+    // games). Without those secrets (e.g. a local build) the normal debug key
+    // is used.
+    val ciKeystore = System.getenv("ULARN_KEYSTORE")?.let { file(it) }?.takeIf { it.exists() }
+    signingConfigs {
+        if (ciKeystore != null) {
+            create("sideload") {
+                storeFile = ciKeystore
+                storePassword = System.getenv("ULARN_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ULARN_KEY_ALIAS") ?: "ularn"
+                keyPassword = System.getenv("ULARN_KEYSTORE_PASSWORD")
+            }
+        }
+    }
+    val buildSigning = signingConfigs.findByName("sideload") ?: signingConfigs.getByName("debug")
+
     buildTypes {
+        debug {
+            signingConfig = buildSigning
+        }
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Signed with the debug key so `assembleRelease` gives an installable APK.
-            // Replace with your own signingConfig before publishing.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = buildSigning
         }
     }
 

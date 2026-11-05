@@ -17,7 +17,19 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+      - name: Signing key from secrets
+        env:
+          KEYSTORE_B64: ${{ secrets.ULARN_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/ularn.keystore"
+            echo "ULARN_KEYSTORE=$RUNNER_TEMP/ularn.keystore" >> "$GITHUB_ENV"
+          else
+            echo "::warning::ULARN_KEYSTORE_B64 secret not set; using a random debug key (updates won't install over older builds)"
+          fi
       - name: Build debug APK
+        env:
+          ULARN_KEYSTORE_PASSWORD: ${{ secrets.ULARN_KEYSTORE_PASSWORD }}
         # ubuntu-latest ships the Android SDK (ANDROID_HOME); Gradle installs
         # the NDK and CMake versions it needs on first build.
         run: |
