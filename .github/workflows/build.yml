@@ -14,9 +14,11 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - uses: android-actions/setup-android@v3
       - name: Build debug APK
+        # ubuntu-latest ships the Android SDK (ANDROID_HOME); Gradle installs
+        # the NDK and CMake versions it needs on first build.
         run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
           chmod +x gradlew
           ./gradlew --no-daemon assembleDebug
       - uses: actions/upload-artifact@v4
