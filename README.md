@@ -1,10 +1,12 @@
 # Ularn for Android
 
-An Android port of [Ularn](https://github.com/ularn/ularn) (v1.7.0), the classic
-terminal roguelike, with fully customizable on-screen controls.
+An Android port of **Ularn 1.6.3a** (Julian Olds' graphical version, from
+[R0x7/ularn-1.6.3a](https://github.com/R0x7/ularn-1.6.3a)), with the original
+tile graphics and fully customizable on-screen controls.
 
-The original C game runs unmodified (apart from a replaced tty layer) inside a
-pseudo-terminal, and the app draws it with a built-in VT100 terminal view.
+The upstream C game core runs unmodified. A new Android front end
+(`ularn_winandroid.c`) implements the game's display/input interface
+(`ularn_win.h`), the same way the X11, Windows and Amiga versions do.
 
 ## Building
 
@@ -32,13 +34,19 @@ Requires Android 7.0+ (API 24). Builds for arm64-v8a, armeabi-v7a and x86_64.
   scoreboard, settings and the control editor.
 - **Back button** opens the in-game menu (keyboard, edit controls, settings,
   help, save & quit).
-- **Map:** pinch to zoom, drag to pan, double-tap to reset. In landscape the map
-  automatically shrinks to fit between your side controls (toggle in Settings).
+- **Map:** the view follows your character; pinch to zoom. Tap a square to
+  step towards it, long-press to run. In landscape the map fits between your
+  side controls (toggle in Settings).
+- **Prompts:** whenever the game asks a question (y/n, pick an item, a store
+  menu, how much gold), buttons for the valid answers appear under the map.
+  Tap a text page (inventory, help, scores) to continue.
 - **Hardware / Bluetooth keyboards** work directly; arrow keys and the numpad
   move (toggle in Settings).
-- **Auto-checkpointing** is on by default, so if Android closes the app you can
-  pick up from the last checkpoint. Use *Save game & quit* (or `S`) for a full
-  save.
+- **Checkpoints:** the game checkpoints every 25 moves and whenever the app
+  goes to the background, so if Android closes it you can *Resume from
+  checkpoint*. Use *Save game & quit* (or `S`) for a full save.
+- **Settings:** character name and gender, skip intro, no delays, no beep, and
+  1.6's *enhanced interface* (open doors with `o`, chests with `O`).
 
 ## Customizing the controls
 
@@ -77,7 +85,11 @@ while held, round/rounded shape, width and height. Duplicate or delete from
 | `^X` | Ctrl+X |
 | `\\`, `\^` | a literal `\` or `^` |
 
-So a button can be a macro, e.g. `c` + spell code: `cpro\n`.
+So a button can be a macro, e.g. `c` + spell code: `cpro`. Ularn 1.6
+commands: `hjklyubn` move (capitals run), `.` rest, `i` inventory, `c` cast,
+`q` quaff, `r` read, `w` wield, `W` wear, `T` take off, `d` drop, `e` eat,
+`\\` list known spells/items, `o`/`C` open/close door, `O` open chest,
+`Z` teleport, `^` identify trap, `g` pack weight, `P` taxes, `S` save, `?` help.
 
 **Run modifier:** tap *Run*, then a D-pad direction to run (sends `H J K L…`).
 Long-press *Run* to keep it on; tap again to turn it off.
@@ -86,26 +98,34 @@ Long-press *Run* to keep it on; tap again to turn it off.
 
 ```
 app/src/main/cpp/
-  ularn/               upstream game sources (tty.c removed)
-  compat/              config.h, built-in VT100 termcap, termios tty layer,
-                       bionic shims, and a force-included header that renames
-                       main()/exit() so the game can run in a forked process
-  spawn.c              forks the game on a new pty (posix_openpt)
-  ularn_jni.c          JNI bindings
+  ularn/                 Ularn 1.6.3a sources (upstream; only the game core is
+                         built, not the TTY/X11/Win32/Amiga front ends)
+  compat/
+    ularn_winandroid.c   Android front end: implements ularn_win.h by writing the
+                         display (map tiles, status, effects, messages, text
+                         pages, what input is expected) into shared memory, and
+                         reading keys from a pipe; adds checkpointing
+    android_config.h     replaces upstream config.h (UNIX, LIBDIR ".")
+    android_shim.h       renames main()/exit() so the game runs in a forked process
+  shared_state.h         the shared display struct
+  spawn.c                forks the game with the shared memory and two pipes
+  ularn_jni.c            JNI bindings (shared buffer + field offsets)
+app/src/main/assets/
+  ularn_tiles.png        upstream ularn_gfx.xpm, with the cursor/sparkle masks baked in
+  ularn/                 Uhelp, Umaps, Ufortune
 app/src/main/java/com/ularn/android/
-  term/                VT100 emulator + terminal view
-  controls/            layout model, overlay (play + edit mode), editor dialog,
-                       persistence
-  GameSession.kt       process lifecycle and I/O
-  MainActivity.kt      UI, menus, settings
+  game/                  GameState (reads the shared struct), GameView (renders it)
+  controls/              layout model, overlay (play + edit mode), editor, persistence
+  GameSession.kt         process lifecycle and I/O
+  MainActivity.kt        UI, menus, settings
 ```
 
-Each game is a fresh `fork()` of the app process with the pty as its
-controlling terminal, so the game's global state always starts clean, and
-closing the session sends `SIGHUP`, which makes Ularn write its checkpoint.
-Game files (`Ularn.sav`, `Ularn.ckp`, `Uscore`, `.Ularnopts`) live in the
-app's private storage.
+Each game is a fresh `fork()` of the app process, so the game's global state
+always starts clean. Game files (`ularn_player.sav`, `ularn_player.ckp`,
+`Uscore`, `ularn.opt`) live in the app's private storage.
 
 ## License
 
-GPL v2, same as Ularn. See `LICENSE`.
+GPL v2, same as Ularn. See `LICENSE` and `app/src/main/cpp/ularn/COPYRIGHT`.
+The non-GPL modules in the 1.6.3a distribution (X11 menu library, Amiga helpers)
+are not used and not included.

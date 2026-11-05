@@ -5,7 +5,6 @@ import android.app.AlertDialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Typeface
@@ -15,11 +14,9 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
-import android.view.ViewGroup
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
-import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
@@ -28,7 +25,6 @@ import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.SeekBar
-import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import com.ularn.android.controls.ButtonAction
@@ -38,17 +34,15 @@ import com.ularn.android.controls.ControlSpec
 import com.ularn.android.controls.ControlType
 import com.ularn.android.controls.ControlsOverlay
 import com.ularn.android.controls.LayoutStore
-import com.ularn.android.term.TerminalEmulator
-import com.ularn.android.term.TerminalView
+import com.ularn.android.game.GameView
 
 class MainActivity : Activity(), ControlsOverlay.Listener {
 
     private lateinit var settings: Settings
     private lateinit var store: LayoutStore
-    private lateinit var emulator: TerminalEmulator
     private lateinit var session: GameSession
 
-    private lateinit var terminal: TerminalView
+    private lateinit var game: GameView
     private lateinit var overlay: ControlsOverlay
     private lateinit var editBar: LinearLayout
     private lateinit var editBarScroll: HorizontalScrollView
@@ -79,23 +73,24 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
 
         settings = Settings(this)
         store = LayoutStore(this)
-        emulator = TerminalEmulator(80, 24)
 
-        terminal = TerminalView(this).apply {
-            emulator = this@MainActivity.emulator
-            onInput = { session.send(it) }
-            onTap = { if (!session.isRunning) showStartPanel(true) }
+        game = GameView(this).apply {
+            onInput = { if (session.isRunning) session.send(it) }
+            onIdleTap = { if (!session.isRunning) showStartPanel(true) }
+            onToggleKeyboard = { setKeyboard(!keyboardShown) }
+            onZoomChanged = { settings.tileDp = it }
         }
         overlay = ControlsOverlay(this).apply { listener = this@MainActivity }
 
         session = GameSession(
-            this, emulator,
-            onOutput = { terminal.postInvalidateOnAnimation() },
+            this,
+            onChanged = { game.postInvalidateOnAnimation() },
             onExit = { onGameExit() },
         )
+        game.state = session.state
 
         val root = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
-        root.addView(terminal, FrameLayout.LayoutParams(-1, -1))
+        root.addView(game, FrameLayout.LayoutParams(-1, -1))
         root.addView(overlay, FrameLayout.LayoutParams(-1, -1))
         buildEditBar(root)
         buildStartPanel(root)
@@ -125,9 +120,15 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         applyOrientation(newConfig)
     }
 
+    override fun onStop() {
+        // Android may kill a backgrounded app without warning, so make sure a
+        // fresh checkpoint exists ("Resume from checkpoint" next time).
+        if (session.isRunning) session.requestCheckpoint()
+        super.onStop()
+    }
+
     override fun onDestroy() {
-        // A hang-up makes Ularn write its checkpoint (if enabled) and exit.
-        if (isFinishing) session.hangUp()
+        if (isFinishing) session.leave()
         super.onDestroy()
     }
 
@@ -140,7 +141,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
             if (keyCode == KeyEvent.KEYCODE_MENU) { showMenu(); return true }
             return super.onKeyDown(keyCode, event)
         }
-        if (session.isRunning && !overlay.editMode && terminal.handleKey(keyCode, event)) return true
+        if (session.isRunning && !overlay.editMode && game.handleKey(keyCode, event)) return true
         return super.onKeyDown(keyCode, event)
     }
 
@@ -169,36 +170,46 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
 
     private fun applyOrientation(cfg: Configuration) {
         landscape = cfg.orientation == Configuration.ORIENTATION_LANDSCAPE
-        terminal.alignTop = !landscape
         overlay.layout = store.load(landscape)
+        game.haptics = overlay.layout.haptics
         updateMapReserve()
     }
 
     /**
-     * In landscape, measure the controls hugging the left and right edges and
-     * shrink the map to fit between them (capped so the map stays readable).
+     * Keep the game's display clear of the controls: in landscape measure the
+     * controls hugging the left and right edges; in portrait, the block of
+     * controls along the bottom. Capped so the map always keeps some room.
      */
     private fun updateMapReserve() {
         overlay.post {
             val w = overlay.width.toFloat()
-            if (!landscape || !settings.fitMapBesideControls || w == 0f) {
-                terminal.setHorizontalReserve(0f, 0f); return@post
-            }
-            var left = 0f; var right = 0f
+            val h = overlay.height.toFloat()
+            if (w == 0f || h == 0f) return@post
             val r = android.graphics.RectF()
+            var left = 0f; var right = 0f; var bottomTop = h
             for (c in overlay.layout.controls) {
                 overlay.rectFor(c, r)
-                if (r.centerX() < w * 0.25f) left = maxOf(left, r.right)
-                else if (r.centerX() > w * 0.75f) right = maxOf(right, w - r.left)
+                if (landscape) {
+                    if (r.centerX() < w * 0.25f) left = maxOf(left, r.right)
+                    else if (r.centerX() > w * 0.75f) right = maxOf(right, w - r.left)
+                } else if (r.centerY() > h * 0.3f) {
+                    bottomTop = minOf(bottomTop, r.top)
+                }
             }
-            terminal.setHorizontalReserve(minOf(left, w * 0.3f), minOf(right, w * 0.3f))
+            if (landscape) {
+                if (!settings.fitMapBesideControls) { left = 0f; right = 0f }
+                game.setReserve(minOf(left, w * 0.3f), minOf(right, w * 0.3f), 0f)
+            } else {
+                game.setReserve(0f, 0f, minOf(h - bottomTop + dp(4), h * 0.65f))
+            }
         }
     }
 
     private fun applySettings() {
-        terminal.theme = TerminalView.THEMES.getOrElse(settings.theme) { TerminalView.THEMES[0] }
-        terminal.showCursor = settings.showCursor
-        terminal.arrowsAsMoves = settings.arrowsAsMoves
+        game.arrowsAsMoves = settings.arrowsAsMoves
+        game.tapToMove = settings.tapToMove
+        game.tileDp = settings.tileDp
+        if (::overlay.isInitialized) game.haptics = overlay.layout.haptics
         if (::overlay.isInitialized) updateMapReserve()
     }
 
@@ -207,11 +218,17 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
     private fun startGame(args: List<String> = emptyList()) {
         showStartPanel(false)
         quitAfterExit = false
-        session.start(settings, args)
-        terminal.requestFocus()
+        if (!session.start(settings, args)) {
+            toast("Couldn't start the game")
+            showStartPanel(true)
+            return
+        }
+        game.running = true
+        game.requestFocus()
     }
 
     private fun onGameExit() {
+        game.running = false
         setKeyboard(false)
         if (quitAfterExit) { finish(); return }
         // Leave the final screen (scores, tombstone...) readable; tap for the menu.
@@ -241,7 +258,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
 
     private fun setKeyboard(show: Boolean) {
         keyboardShown = show
-        terminal.showKeyboard(show)
+        game.showKeyboard(show)
     }
 
     // ------------------------------------------------------------ editing
@@ -383,7 +400,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         })
         box.addView(CheckBox(this).apply {
             text = "Vibrate on press"; isChecked = l.haptics
-            setOnCheckedChangeListener { _, v -> l.haptics = v }
+            setOnCheckedChangeListener { _, v -> l.haptics = v; game.haptics = v }
         })
         AlertDialog.Builder(this).setTitle("Controls appearance").setView(box).setPositiveButton("OK", null).show()
     }
@@ -482,7 +499,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
             else -> item("New game", accent = true) { startGame() }
         }
         if (session.hasSave()) item("New game (discard save)") { confirmDiscardSave() }
-        item("Scoreboard") { startGame(listOf("-i")) }
+        item("Scoreboard") { startGame(listOf("-s")) }
         item("Edit controls") { startEditing() }
         item("Settings") { showSettings() }
         item("Quit") { finish() }
@@ -493,7 +510,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
     private fun confirmNewGameOverCheckpoint() {
         AlertDialog.Builder(this)
             .setMessage("Start a new game? The checkpoint will be discarded.")
-            .setPositiveButton("New game") { _, _ -> java.io.File(session.workDir, "Ularn.ckp").delete(); startGame() }
+            .setPositiveButton("New game") { _, _ -> session.checkpointFile.delete(); startGame() }
             .setNegativeButton("Cancel", null).show()
     }
 
@@ -501,8 +518,8 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         AlertDialog.Builder(this)
             .setMessage("Delete your saved game and start over?")
             .setPositiveButton("Delete & start") { _, _ ->
-                java.io.File(session.workDir, "Ularn.sav").delete()
-                java.io.File(session.workDir, "Ularn.ckp").delete()
+                session.saveFile.delete()
+                session.checkpointFile.delete()
                 startGame()
             }
             .setNegativeButton("Cancel", null).show()
@@ -521,7 +538,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
             "Settings",
             "Game help (?)",
             "Save game & quit",
-            "Quit without saving",
+            "Leave (resume from checkpoint later)",
         )
         AlertDialog.Builder(this).setItems(items) { _, which ->
             when (which) {
@@ -531,11 +548,8 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
                 3 -> session.send(byteArrayOf('?'.code.toByte()))
                 4 -> { quitAfterExit = true; session.send(byteArrayOf('S'.code.toByte())) }
                 5 -> AlertDialog.Builder(this)
-                    .setMessage(
-                        if (settings.checkpointing) "Leave now? You can resume from the last checkpoint next time."
-                        else "Leave now? Progress since your last save will be lost."
-                    )
-                    .setPositiveButton("Quit") { _, _ -> quitAfterExit = true; session.hangUp() }
+                    .setMessage("Leave now? The game is checkpointed, so \"Resume from checkpoint\" picks up from here (or from your last few moves if you're in the middle of a menu).")
+                    .setPositiveButton("Leave") { _, _ -> quitAfterExit = true; session.leave() }
                     .setNegativeButton("Cancel", null).show()
             }
         }.show()
@@ -557,19 +571,18 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         box.addView(name)
         check("Female character", settings.female) { settings.female = it }
         check("Skip introduction", settings.skipIntro) { settings.skipIntro = it }
-        check("Auto-checkpoint (resume after the app is closed)", settings.checkpointing) { settings.checkpointing = it }
         check("No delays (no-nap)", settings.noNap) { settings.noNap = it }
         check("No beeping", settings.noBeep) { settings.noBeep = it }
+        check("Enhanced interface: open doors with 'o', chests with 'O'", settings.enhancedInterface) { settings.enhancedInterface = it }
 
-        header("Display")
-        val themeSpinner = Spinner(this).apply {
-            adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, TerminalView.THEMES.map { it.name })
-            setSelection(settings.theme.coerceIn(0, TerminalView.THEMES.size - 1))
-        }
-        box.addView(themeSpinner)
-        check("Show cursor", settings.showCursor) { settings.showCursor = it }
-        check("Landscape: fit map beside the controls", settings.fitMapBesideControls) { settings.fitMapBesideControls = it }
-        box.addView(TextView(this).apply { text = "Pinch the map to zoom, double-tap to reset."; textSize = 12f; alpha = 0.7f })
+        header("Map")
+        check("Tap a square to step towards it (long-press to run)", settings.tapToMove) { settings.tapToMove = it }
+        check("Landscape: fit the map beside the controls", settings.fitMapBesideControls) { settings.fitMapBesideControls = it }
+        box.addView(Button(this).apply {
+            text = "Reset map zoom"; isAllCaps = false
+            setOnClickListener { settings.tileDp = 0f; game.tileDp = 0f; toast("Zoom reset") }
+        })
+        box.addView(TextView(this).apply { text = "Pinch the map to zoom in or out; the view follows your character."; textSize = 12f; alpha = 0.7f })
 
         header("Keyboard")
         check("Arrow keys / numpad move (hardware keyboard)", settings.arrowsAsMoves) { settings.arrowsAsMoves = it }
@@ -579,7 +592,6 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
             .setView(ScrollView(this).apply { addView(box) })
             .setPositiveButton("OK") { _, _ ->
                 settings.playerName = name.text.toString()
-                settings.theme = themeSpinner.selectedItemPosition
                 applySettings()
             }
             .show()

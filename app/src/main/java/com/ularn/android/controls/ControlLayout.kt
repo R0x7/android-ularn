@@ -89,28 +89,28 @@ object DefaultLayouts {
 
     fun portrait(): ControlLayout = ControlLayout(
         mutableListOf(
-            ControlSpec("dpad", ControlType.DPAD, "", cx = 0.27f, cy = 0.74f, widthDp = 180f, heightDp = 180f, repeat = true),
+            ControlSpec("dpad", ControlType.DPAD, "", cx = 0.27f, cy = 0.785f, widthDp = 170f, heightDp = 170f, repeat = true),
             // right-hand action cluster
-            btn("esc", "Esc", "\\e", 0.60f, 0.60f),
-            btn("ret", "⏎", "\\n", 0.76f, 0.60f),
-            btn("spc", "Spc", "\\s", 0.91f, 0.60f),
-            btn("inv", "Inv", "i", 0.60f, 0.70f),
-            btn("cast", "Cast", "c", 0.76f, 0.70f),
-            btn("quaff", "Quaff", "q", 0.91f, 0.70f),
-            btn("read", "Read", "r", 0.60f, 0.80f),
-            btn("wield", "Wield", "w", 0.76f, 0.80f),
-            btn("wear", "Wear", "W", 0.91f, 0.80f),
-            btn("drop", "Drop", "d", 0.60f, 0.90f),
-            btn("eat", "Eat", "e", 0.76f, 0.90f),
-            ControlSpec("run", ControlType.BUTTON, "Run", action = ButtonAction.RUN, cx = 0.91f, cy = 0.90f, widthDp = 52f, heightDp = 48f),
-            // top strip under the map
-            small("kbd", "⌨", ButtonAction.KEYBOARD, 0.08f, 0.38f),
-            btn("help", "?", "?", 0.20f, 0.38f, 44f, 40f),
-            btn("disc", "Known", "D", 0.34f, 0.38f, 56f, 40f),
-            btn("rest", "Rest", ".", 0.48f, 0.38f, 52f, 40f),
-            btn("save", "Save", "S", 0.62f, 0.38f, 52f, 40f),
-            btn("tele", "Z", "Z", 0.75f, 0.38f, 44f, 40f),
-            small("menu", "☰", ButtonAction.MENU, 0.92f, 0.38f),
+            btn("esc", "Esc", "\\e", 0.60f, 0.645f),
+            btn("ret", "⏎", "\\n", 0.76f, 0.645f),
+            btn("spc", "Spc", "\\s", 0.91f, 0.645f),
+            btn("inv", "Inv", "i", 0.60f, 0.735f),
+            btn("cast", "Cast", "c", 0.76f, 0.735f),
+            btn("quaff", "Quaff", "q", 0.91f, 0.735f),
+            btn("read", "Read", "r", 0.60f, 0.825f),
+            btn("wield", "Wield", "w", 0.76f, 0.825f),
+            btn("wear", "Wear", "W", 0.91f, 0.825f),
+            btn("drop", "Drop", "d", 0.60f, 0.915f),
+            btn("eat", "Eat", "e", 0.76f, 0.915f),
+            ControlSpec("run", ControlType.BUTTON, "Run", action = ButtonAction.RUN, cx = 0.91f, cy = 0.915f, widthDp = 52f, heightDp = 46f),
+            // strip just below the map
+            small("kbd", "⌨", ButtonAction.KEYBOARD, 0.08f, 0.565f),
+            btn("help", "?", "?", 0.20f, 0.565f, 44f, 38f),
+            btn("disc", "Known", "\\\\", 0.34f, 0.565f, 56f, 38f),
+            btn("rest", "Rest", ".", 0.48f, 0.565f, 52f, 38f),
+            btn("save", "Save", "S", 0.62f, 0.565f, 52f, 38f),
+            btn("tele", "Z", "Z", 0.75f, 0.565f, 44f, 38f),
+            small("menu", "☰", ButtonAction.MENU, 0.92f, 0.565f),
         )
     )
 

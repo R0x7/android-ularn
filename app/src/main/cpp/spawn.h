@@ -1,12 +1,29 @@
 #ifndef ULARN_SPAWN_H
 #define ULARN_SPAWN_H
 #include <sys/types.h>
+#include "shared_state.h"
 
-/* Returns the pty master fd (>= 0) or -errno. */
-int ularn_spawn(const char *workdir, int argc, char **argv,
-                char **envp, int rows, int cols, pid_t *pid_out);
-int ularn_set_size(int master, int rows, int cols);
+/* Exported only for the desktop test harness (-DULARN_HOST_TEST). */
+#ifdef ULARN_HOST_TEST
+#define ULARN_TEST_API __attribute__((visibility("default")))
+#else
+#define ULARN_TEST_API
+#endif
+
+typedef struct UlarnSpawn {
+    pid_t pid;
+    int input_fd;    /* app writes keys here */
+    int notify_fd;   /* app reads change notifications here */
+} UlarnSpawn;
+
+/* The display-state region shared with every game child (created once). */
+ULARN_TEST_API UlarnShared *ularn_shared_region(void);
+
+/* Forks a game. Returns 0 on success or -errno. */
+ULARN_TEST_API int ularn_spawn(const char *workdir, int argc, char **argv, char **envp,
+                UlarnSpawn *out);
+
 /* Blocks until the child exits; returns exit code (128+sig if killed). */
-int ularn_wait(pid_t pid);
+ULARN_TEST_API int ularn_wait(pid_t pid);
 
 #endif

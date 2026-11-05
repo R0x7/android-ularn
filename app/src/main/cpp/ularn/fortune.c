@@ -1,74 +1,150 @@
-/* fortune.c */
-#include "header.h"
-#include "extern.h"
-/*
- *	function to return a random fortune from the fortune file
+/* =============================================================================
+ * PROGRAM:  ularn
+ * FILENAME: fortune.c
+ *
+ * DESCRIPTION:
+ * This module contains functions for displaying fortunes inside fortune
+ * cookies.
+ *
+ * =============================================================================
+ * EXPORTED VARIABLES
+ *
+ * None
+ *
+ * =============================================================================
+ * EXPORTED FUNCTIONS
+ *
+ * fortune       - Returns a random fortune string.
+ * free_fortunes - Frees the fortunes data.
+ *
+ * =============================================================================
  */
-static char *base=NULL;	/* pointer to the fortune text */
-static char **flines=NULL;	/* array of pointers to each fortune */
-static int fortune_fd=0;	/* true if we have loaded the fortune info */
-static int nlines=0;	/* # lines in fortune database */
 
-char *fortune(file)
-char *file;
+#include <stdio.h>
+
+#include "header.h"
+#include "fortune.h"
+
+/* =============================================================================
+ * Local variables
+ */
+
+#define MAX_FORTUNE_LEN 80
+
+/*
+ * Data structure for a linked list of fortune strings read from the
+ * fortune file
+ */
+struct FortuneType
 {
-	char *p;
-	int lines,tmp;
-	struct stat stat;
-	int retval;
+  char Line[MAX_FORTUNE_LEN];
+  struct FortuneType *Next;
+};
 
-	if (fortune_fd==0) {
-		/* open the file */
-		if ((fortune_fd=open(file,O_RDONLY)) < 0)	
-			return(0); /* can't find file */
+static struct FortuneType *fortunes = NULL;
+static int fortune_read = 0;   /* true if we have loaded the fortune info */
+static int nlines = 0;         /* # lines in fortune database */
 
-		/* find out how big fortune file is and get memory for it */
-		retval = fstat(fortune_fd,&stat);
-		if ((retval < 0) || ((base=malloc((unsigned)(1+stat.st_size))) 
-		     == (char *)NULL)) {
-			close(fortune_fd); 
-			fortune_fd= -1; 
-			if (base) free(base); 
-			return(0); 	/* can't stat file */
-		}
+/* =============================================================================
+ * Exported functions
+ */
 
-		/* read in the entire fortune file */
-		if ((stat.st_size = read(fortune_fd,(char *)base,stat.st_size))
-		     == -1) {
-			close(fortune_fd); 
-			fortune_fd= -1; 
-			if (base) free(base); 
-			return(0); 	/* can't read file */
-		}
-		close(fortune_fd);  
-		base[stat.st_size] = 0 ; /* final NULL termination */
+/* =============================================================================
+ * FUNCTION: fortune
+ */
 
-	/* count up all the lines (and NULL terminate) to know memory needs */
-		for (p=base,lines=0; p<base+stat.st_size; p++) /* count lines */
-			if (*p == '\n') { 
-				*p= 0;
-				lines++;
-			}
-		nlines = lines;
+char *fortune(char *file)
+{
+  FILE *fp;
+  char *Line;
+  char Buffer[80];
+  struct FortuneType *NewFortune;
+  int Len;
+  int Pos;
 
-		/* get memory for array of pointers to each fortune */
-		if ((flines=(char**)malloc((unsigned)(nlines*sizeof(char*)))) 
-		     == (char **)NULL) {
-			if (base) free(base); 
-			fortune_fd= -1; 
-			return(0); /* malloc() failure */
-		}
+  if (fortune_read == 0)
+  {
+    /* open the file */
+    fp = fopen(file, "r");
+    if (fp == NULL)
+    {
+      /* can't find file */
+      return(0);
+    }
 
-		/* now assign each pointer to a line */
-		for (p=base,tmp=0; tmp<nlines; tmp++) {
-			flines[tmp]=p;  
-			while (*p++)
-				; /* advance to next line */
-		}
-	}
+    /* Read the fortune lines from the file */
+    while (!feof(fp))
+    {
+      Line = fgets(Buffer, MAX_FORTUNE_LEN, fp);
+      if (Line != NULL)
+      {
+        /* trim white space and CR/LF fromt he end of the line */
+        Len = strlen(Buffer);
+        Len--;
+        while ((Len > 0) && isspace((int) Buffer[Len]))
+        {
+          Buffer[Len] = 0;
+          Len--;
+        }
 
-	if (fortune_fd > 2)	/* if we have a database to look at */
-		return(flines[rund((nlines<=0)?1:nlines)]);
-	else 
-	    return(0);
+        /* Allocate a new fortune */
+        NewFortune = (struct FortuneType *) malloc(sizeof(struct FortuneType));
+
+        if (NewFortune == NULL)
+        {
+          return NULL;
+        }
+
+        strcpy(NewFortune->Line, Buffer);
+        NewFortune->Next = fortunes;
+        fortunes = NewFortune;
+        nlines++;
+
+      }
+    }
+
+    fortune_read = 1;
+
+    fclose(fp);
+  }
+
+  if (fortune_read)
+  {
+    if (nlines > 0)
+    {
+      Pos = rund(nlines);
+      NewFortune = fortunes;
+
+      while (Pos > 0)
+      {
+        NewFortune = NewFortune->Next;
+        Pos--;
+      }
+
+      return (NewFortune->Line);
+    }
+    else
+    {
+      return (NULL);
+    }
+  }
+  else
+  {
+    return (NULL);
+  }
+}
+
+/* =============================================================================
+ * FUNCTION: free_fortunes
+ */
+void free_fortunes(void)
+{
+  struct FortuneType *Fortune;
+
+  while (fortunes != NULL)
+  {
+    Fortune = fortunes->Next;
+    free(fortunes);
+    fortunes = Fortune;
+  }
 }

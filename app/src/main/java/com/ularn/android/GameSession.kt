@@ -5,37 +5,48 @@ import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.util.Log
-import com.ularn.android.term.TerminalEmulator
+import com.ularn.android.game.GameState
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.concurrent.Executors
 
 /**
- * Owns one running game process: prepares its working directory, spawns it
- * on a pty, pumps output into the [TerminalEmulator] and forwards input.
+ * Owns one running game process: prepares its working directory, forks it,
+ * forwards keys, and reports display changes and exit.
+ *
+ * The game writes its display into shared memory ([state]); it pokes a pipe
+ * after each change so the UI redraws only when needed.
  */
 class GameSession(
     private val context: Context,
-    val emulator: TerminalEmulator,
-    private val onOutput: () -> Unit,
+    private val onChanged: () -> Unit,
     private val onExit: (code: Int) -> Unit,
 ) {
     private val main = Handler(Looper.getMainLooper())
     private val writer = Executors.newSingleThreadExecutor()
-    private var pfd: ParcelFileDescriptor? = null
     private var out: FileOutputStream? = null
+    private var inPfd: ParcelFileDescriptor? = null
     @Volatile private var pid = -1
+
+    /** The display state; created once, shared by every game process. */
+    val state: GameState? by lazy {
+        NativeBridge.sharedState()?.let { GameState(it, NativeBridge.layout()) }
+    }
 
     val isRunning get() = pid > 0
 
-    val workDir: File get() = File(context.filesDir, "ularn")
+    val workDir: File get() = File(context.filesDir, "ularn163")
 
-    fun hasSave() = File(workDir, "Ularn.sav").exists()
-    fun hasCheckpoint() = File(workDir, "Ularn.ckp").exists()
+    /** Ularn names save files after the login name, which we fix as "player". */
+    val saveFile get() = File(workDir, "ularn_$LOGIN.sav")
+    val checkpointFile get() = File(workDir, "ularn_$LOGIN.ckp")
 
-    /** Copies data files and writes .Ularnopts from settings. */
-    fun prepare(settings: Settings) {
+    fun hasSave() = saveFile.exists()
+    fun hasCheckpoint() = checkpointFile.exists()
+
+    /** Copies data files and writes ularn.opt from settings. */
+    private fun prepare(settings: Settings) {
         val dir = workDir
         dir.mkdirs()
         for (name in listOf("Uhelp", "Umaps", "Ufortune")) {
@@ -43,66 +54,55 @@ class GameSession(
                 File(dir, name).outputStream().use { input.copyTo(it) }
             }
         }
-        File(dir, ".Ularnopts").writeText(settings.buildOptsFile())
+        File(dir, "ularn.opt").writeText(settings.buildOptsFile())
     }
 
-    fun start(settings: Settings, args: List<String> = emptyList()) {
-        if (isRunning) return
+    fun start(settings: Settings, args: List<String> = emptyList()): Boolean {
+        if (isRunning) return true
+        state ?: return false
         prepare(settings)
-        emulator.reset()
         val dir = workDir.absolutePath
-        val env = arrayOf(
-            "TERM=vt100",
-            "HOME=$dir",
-            "USER=player",
-            "LOGNAME=player",
-            "LINES=${emulator.rows}",
-            "COLUMNS=${emulator.columns}",
-            "SHELL=/system/bin/sh",
-        )
-        val result = NativeBridge.spawn(dir, (listOf("Ularn") + args).toTypedArray(), env, emulator.rows, emulator.columns)
-        val fd = result[0]
-        if (fd < 0) {
-            emulator.feed("\r\nCould not start game (error ${-fd}).\r\n")
-            onOutput()
-            return
+        val env = arrayOf("HOME=$dir", "USER=$LOGIN", "LOGNAME=$LOGIN")
+        val r = NativeBridge.spawn(dir, (listOf("ularn") + args).toTypedArray(), env)
+        if (r[0] != 0) {
+            Log.e(TAG, "spawn failed: errno ${-r[0]}")
+            return false
         }
-        pid = result[1]
-        val p = ParcelFileDescriptor.adoptFd(fd)
-        pfd = p
-        // Separate dup'd descriptors so reader and writer can close independently.
-        val readPfd = p.dup()   // keep a reference: a GC'd PFD closes its fd
-        val inStream = FileInputStream(readPfd.fileDescriptor)
-        out = FileOutputStream(p.fileDescriptor)
+        val myPid = r[1]
+        pid = myPid
+        val inP = ParcelFileDescriptor.adoptFd(r[2])
+        inPfd = inP
+        out = FileOutputStream(inP.fileDescriptor)
+        val notePfd = ParcelFileDescriptor.adoptFd(r[3])
 
-        val myPid = pid
         Thread({
-            val buf = ByteArray(8192)
-            try {
-                while (true) {
-                    val n = inStream.read(buf)
-                    if (n <= 0) break
-                    emulator.feed(buf, 0, n)
-                    onOutput()
+            val buf = ByteArray(256)
+            FileInputStream(notePfd.fileDescriptor).use { ins ->
+                try {
+                    while (true) {
+                        if (ins.read(buf) <= 0) break
+                        onChanged()
+                    }
+                } catch (_: Exception) {
                 }
-            } catch (e: Exception) {
-                // EIO when the child closes the pty: normal end of game
-            } finally {
-                try { inStream.close() } catch (_: Exception) {}
-                try { readPfd.close() } catch (_: Exception) {}
             }
-        }, "ularn-reader").start()
+            try { notePfd.close() } catch (_: Exception) {}
+        }, "ularn-notify").start()
 
         Thread({
             val code = NativeBridge.waitFor(myPid)
             main.post {
                 if (pid == myPid) {
                     pid = -1
-                    closeFds()
+                    closeInput()
+                    onChanged()
                     onExit(code)
                 }
             }
         }, "ularn-waiter").start()
+
+        onChanged()
+        return true
     }
 
     fun send(bytes: ByteArray) {
@@ -114,22 +114,33 @@ class GameSession(
     }
 
     /**
-     * Hangs up the game like a closed terminal. If checkpointing is enabled the
-     * game writes Ularn.ckp first, so it can be restored later.
+     * Asks the game to write a checkpoint. It does so at its next command
+     * prompt (where the game state is always consistent); in a sub-prompt the
+     * key is ignored and the most recent automatic checkpoint stands.
      */
-    fun hangUp() {
-        if (pid > 0) NativeBridge.sendSignal(pid, NativeBridge.SIGHUP)
+    fun requestCheckpoint() = send(byteArrayOf(KEY_CHECKPOINT))
+
+    /** Leave the game: checkpoint if possible, then close its input so it exits. */
+    fun leave() {
+        if (!isRunning) return
+        requestCheckpoint()
+        writer.execute { closeInput() }
     }
 
     fun kill() {
         if (pid > 0) NativeBridge.sendSignal(pid, NativeBridge.SIGKILL)
     }
 
-    private fun closeFds() {
+    private fun closeInput() {
         try { out?.close() } catch (_: Exception) {}
-        try { pfd?.close() } catch (_: Exception) {}
-        out = null; pfd = null
+        try { inPfd?.close() } catch (_: Exception) {}
+        out = null; inPfd = null
     }
 
-    companion object { private const val TAG = "GameSession" }
+    companion object {
+        private const val TAG = "GameSession"
+        const val LOGIN = "player"
+        /** Ctrl+] - the front end treats it as "write a checkpoint now". */
+        const val KEY_CHECKPOINT: Byte = 0x1d
+    }
 }

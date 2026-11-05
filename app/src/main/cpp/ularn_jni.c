@@ -1,11 +1,15 @@
 /* JNI bindings for com.ularn.android.NativeBridge */
 #include <jni.h>
 #include <signal.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 #include "spawn.h"
+#include "shared_state.h"
+
+/* JNIEXPORT already marks these default-visibility despite -fvisibility=hidden. */
 
 static char **to_cstr_array(JNIEnv *env, jobjectArray arr, int *count)
 {
@@ -30,17 +34,17 @@ static void free_cstr_array(char **a)
     free(a);
 }
 
+/* Returns [status(0 or -errno), pid, inputFd, notifyFd]. */
 JNIEXPORT jintArray JNICALL
 Java_com_ularn_android_NativeBridge_spawn(JNIEnv *env, jclass cls,
-        jstring jworkdir, jobjectArray jargs, jobjectArray jenv,
-        jint rows, jint cols)
+        jstring jworkdir, jobjectArray jargs, jobjectArray jenv)
 {
     const char *wd = (*env)->GetStringUTFChars(env, jworkdir, NULL);
     char *workdir = strdup(wd);
-    int argc = 0, fd;
+    int argc = 0, rc;
     char **argv, **envp;
-    pid_t pid = -1;
-    jint result[2];
+    UlarnSpawn sp;
+    jint result[4];
     jintArray out;
     (void)cls;
 
@@ -48,17 +52,78 @@ Java_com_ularn_android_NativeBridge_spawn(JNIEnv *env, jclass cls,
     argv = to_cstr_array(env, jargs, &argc);
     envp = to_cstr_array(env, jenv, NULL);
 
-    fd = ularn_spawn(workdir, argc, argv, envp, rows, cols, &pid);
+    memset(&sp, 0, sizeof sp);
+    rc = ularn_spawn(workdir, argc, argv, envp, &sp);
 
-    /* Parent copies are no longer needed (the child has its own). */
     free(workdir);
     free_cstr_array(argv);
     free_cstr_array(envp);
 
-    result[0] = fd;
-    result[1] = (jint)pid;
-    out = (*env)->NewIntArray(env, 2);
-    (*env)->SetIntArrayRegion(env, out, 0, 2, result);
+    result[0] = rc;
+    result[1] = rc == 0 ? (jint) sp.pid : -1;
+    result[2] = rc == 0 ? sp.input_fd : -1;
+    result[3] = rc == 0 ? sp.notify_fd : -1;
+    out = (*env)->NewIntArray(env, 4);
+    (*env)->SetIntArrayRegion(env, out, 0, 4, result);
+    return out;
+}
+
+JNIEXPORT jobject JNICALL
+Java_com_ularn_android_NativeBridge_sharedState(JNIEnv *env, jclass cls)
+{
+    UlarnShared *s = ularn_shared_region();
+    (void)cls;
+    if (!s) return NULL;
+    return (*env)->NewDirectByteBuffer(env, s, (jlong) sizeof(UlarnShared));
+}
+
+/* Field offsets, in the order of GameState.Field in Kotlin. */
+JNIEXPORT jintArray JNICALL
+Java_com_ularn_android_NativeBridge_layout(JNIEnv *env, jclass cls)
+{
+    jint v[] = {
+        (jint) sizeof(UlarnShared),
+        offsetof(UlarnShared, magic),
+        offsetof(UlarnShared, seq),
+        offsetof(UlarnShared, display_mode),
+        offsetof(UlarnShared, input_mode),
+        offsetof(UlarnShared, answers),
+        offsetof(UlarnShared, caret),
+        offsetof(UlarnShared, cursor_x),
+        offsetof(UlarnShared, cursor_y),
+        offsetof(UlarnShared, beep_count),
+        offsetof(UlarnShared, player_x),
+        offsetof(UlarnShared, player_y),
+        offsetof(UlarnShared, player_cursor),
+        offsetof(UlarnShared, tiles),
+        offsetof(UlarnShared, overlay),
+        offsetof(UlarnShared, status1),
+        offsetof(UlarnShared, status2),
+        offsetof(UlarnShared, hp),
+        offsetof(UlarnShared, hpmax),
+        offsetof(UlarnShared, spells),
+        offsetof(UlarnShared, spellmax),
+        offsetof(UlarnShared, gold),
+        offsetof(UlarnShared, plevel),
+        offsetof(UlarnShared, ac),
+        offsetof(UlarnShared, wc),
+        offsetof(UlarnShared, exp),
+        offsetof(UlarnShared, dlevel),
+        offsetof(UlarnShared, level_name),
+        offsetof(UlarnShared, effects),
+        offsetof(UlarnShared, class_num),
+        offsetof(UlarnShared, sex),
+        offsetof(UlarnShared, msg_chr),
+        offsetof(UlarnShared, msg_fmt),
+        offsetof(UlarnShared, text_chr),
+        offsetof(UlarnShared, text_fmt),
+        /* dimensions */
+        US_MAP_W, US_MAP_H, US_LINE_LEN, US_MSG_LINES, US_TEXT_LINES,
+    };
+    jintArray out;
+    (void)cls;
+    out = (*env)->NewIntArray(env, (jsize)(sizeof v / sizeof v[0]));
+    (*env)->SetIntArrayRegion(env, out, 0, (jsize)(sizeof v / sizeof v[0]), v);
     return out;
 }
 
@@ -67,14 +132,6 @@ Java_com_ularn_android_NativeBridge_waitFor(JNIEnv *env, jclass cls, jint pid)
 {
     (void)env; (void)cls;
     return ularn_wait((pid_t)pid);
-}
-
-JNIEXPORT void JNICALL
-Java_com_ularn_android_NativeBridge_setSize(JNIEnv *env, jclass cls,
-        jint fd, jint rows, jint cols)
-{
-    (void)env; (void)cls;
-    ularn_set_size(fd, rows, cols);
 }
 
 JNIEXPORT void JNICALL

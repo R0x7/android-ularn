@@ -1,34 +1,41 @@
 cmake_minimum_required(VERSION 3.22.1)
 project(ularn C)
 
-# Upstream Ularn sources (unmodified, except tty.c which is replaced).
-file(GLOB ULARN_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/ularn/*.c)
-
+# Ularn 1.6.3a game core (upstream, unmodified). Platform front ends
+# (TTY, X11, Win32, Amiga) are not built; compat/ularn_winandroid.c replaces them.
+set(U ${CMAKE_CURRENT_SOURCE_DIR}/ularn)
 add_library(ularn_game STATIC
-        ${ULARN_SOURCES}
-        compat/tty_termios.c
-        compat/termcap_vt100.c
-        compat/bionic_compat.c)
+        ${U}/ularn.c ${U}/ularn_game.c ${U}/ularn_ask.c ${U}/store.c
+        ${U}/sphere.c ${U}/spell.c ${U}/show.c ${U}/scroll.c ${U}/scores.c
+        ${U}/saveutils.c ${U}/savegame.c ${U}/potion.c ${U}/player.c
+        ${U}/object.c ${U}/monster.c ${U}/itm.c ${U}/help.c ${U}/getopt.c
+        ${U}/fortune.c ${U}/dungeon_obj.c ${U}/dungeon.c ${U}/diag.c
+        ${U}/action.c
+        compat/ularn_winandroid.c)
 
-# The game is 1980s K&R C: compile it as gnu89 and silence the noise.
+# Hidden visibility: the game's globals (e.g. `dirname`, `index`) share names
+# with libc functions. Exported, the dynamic linker could bind the game's own
+# references to libc's symbols instead. Hidden + -Bsymbolic keeps every game
+# reference inside this library; only JNI entry points are exported.
 target_compile_options(ularn_game PRIVATE
-        -std=gnu89
+        -fvisibility=hidden
+        -std=gnu99
         -w
         -Wno-implicit-function-declaration
-        -Wno-implicit-int
         -Wno-int-conversion
         -Wno-incompatible-pointer-types
         -Wno-return-type
         -Wno-error
         -Wno-format-security
         -Wno-error=format-security
+        # android_shim.h pulls in android_config.h, which defines upstream's
+        # __CONFIG_H guard so ularn/config.h (TTY settings) becomes a no-op.
         -include ${CMAKE_CURRENT_SOURCE_DIR}/compat/android_shim.h)
-target_compile_definitions(ularn_game PRIVATE LIBDIR=\".\")
-# compat/ first so our config.h and termio.h win.
-target_include_directories(ularn_game BEFORE PRIVATE
+target_include_directories(ularn_game PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/compat
-        ${CMAKE_CURRENT_SOURCE_DIR}/ularn)
+        ${U})
 
 add_library(ularn SHARED spawn.c ularn_jni.c)
-target_link_libraries(ularn ularn_game z)
-target_link_options(ularn PRIVATE -Wl,--no-undefined)
+target_link_libraries(ularn ularn_game)
+target_compile_options(ularn PRIVATE -fvisibility=hidden)
+target_link_options(ularn PRIVATE -Wl,--no-undefined -Wl,-Bsymbolic)

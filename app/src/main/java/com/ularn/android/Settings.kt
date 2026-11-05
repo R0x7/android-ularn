@@ -18,10 +18,6 @@ class Settings(context: Context) {
         get() = p.getBoolean("skipIntro", false)
         set(v) = p.edit().putBoolean("skipIntro", v).apply()
 
-    var checkpointing: Boolean
-        get() = p.getBoolean("checkpoint", true)
-        set(v) = p.edit().putBoolean("checkpoint", v).apply()
-
     var noNap: Boolean
         get() = p.getBoolean("noNap", false)
         set(v) = p.edit().putBoolean("noNap", v).apply()
@@ -30,15 +26,20 @@ class Settings(context: Context) {
         get() = p.getBoolean("noBeep", false)
         set(v) = p.edit().putBoolean("noBeep", v).apply()
 
-    var theme: Int
-        get() = p.getInt("theme", 0)
-        set(v) = p.edit().putInt("theme", v).apply()
+    /**
+     * Ularn 1.6's "enhanced interface": doors open with 'o' + direction
+     * instead of by walking into them, and 'O' opens a chest you stand on.
+     */
+    var enhancedInterface: Boolean
+        get() = p.getBoolean("enhanced", false)
+        set(v) = p.edit().putBoolean("enhanced", v).apply()
 
-    var showCursor: Boolean
-        get() = p.getBoolean("cursor", true)
-        set(v) = p.edit().putBoolean("cursor", v).apply()
+    /** Tap a square on the map to step towards it (long-press to run). */
+    var tapToMove: Boolean
+        get() = p.getBoolean("tapMove", true)
+        set(v) = p.edit().putBoolean("tapMove", v).apply()
 
-    /** Landscape: shrink the map so it sits between the side controls. */
+    /** Landscape: keep the map clear of the side controls. */
     var fitMapBesideControls: Boolean
         get() = p.getBoolean("fitBeside", true)
         set(v) = p.edit().putBoolean("fitBeside", v).apply()
@@ -48,14 +49,20 @@ class Settings(context: Context) {
         get() = p.getBoolean("arrows", true)
         set(v) = p.edit().putBoolean("arrows", v).apply()
 
-    fun buildOptsFile(): String = buildString {
-        val name = playerName.replace("\"", "").take(34).ifBlank { "Adventurer" }
-        appendLine("name: \"$name\"")
-        appendLine(if (female) "female" else "male")
-        appendLine("no-mail")
-        if (checkpointing) appendLine("enable-checkpointing")
-        if (skipIntro) appendLine("no-introduction")
-        if (noNap) appendLine("no-nap")
-        if (noBeep) appendLine("no-beep")
+    /** Map zoom, as tile size in dp; 0 = automatic. */
+    var tileDp: Float
+        get() = p.getFloat("tileDp", 0f)
+        set(v) = p.edit().putFloat("tileDp", v).apply()
+
+    /** Builds Ularn 1.6.3a's ularn.opt: "OPTION name:X,gender:male,...". */
+    fun buildOptsFile(): String {
+        // ',' and ':' separate options in ularn.opt.
+        val name = playerName.replace(Regex("[,:\\r\\n]"), " ").trim().take(30).ifBlank { "Adventurer" }
+        val opts = mutableListOf("name:$name", "gender:" + if (female) "female" else "male")
+        if (skipIntro) opts += "nowelcome"
+        if (noNap) opts += "nonap"
+        if (noBeep) opts += "nobeep"
+        opts += if (enhancedInterface) "enhanced_interface" else "noenhanced_interface"
+        return "# Written by the Ularn app; edit in Settings.\nOPTION " + opts.joinToString(",") + "\n"
     }
 }

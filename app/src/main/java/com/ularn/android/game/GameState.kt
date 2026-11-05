@@ -1,0 +1,127 @@
+package com.ularn.android.game
+
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+
+/**
+ * A consistent copy of the game's display state (see cpp/shared_state.h).
+ *
+ * The game process writes the shared struct; [refresh] copies the whole thing
+ * (about 10 KB) into a local array once per frame, and the accessors read
+ * from that copy. Offsets come from the native side, so nothing here has to
+ * be kept in sync with the C struct by hand.
+ */
+class GameState(private val shared: ByteBuffer, layout: IntArray) {
+
+    /** Indices into NativeBridge.layout(); order matches ularn_jni.c. */
+    private object F {
+        const val SIZE = 0; const val MAGIC = 1; const val SEQ = 2
+        const val DISPLAY = 3; const val INPUT = 4; const val ANSWERS = 5
+        const val CARET = 6; const val CX = 7; const val CY = 8; const val BEEP = 9
+        const val PX = 10; const val PY = 11; const val PCURSOR = 12
+        const val TILES = 13; const val OVERLAY = 14
+        const val STATUS1 = 15; const val STATUS2 = 16
+        const val HP = 17; const val HPMAX = 18; const val SPELLS = 19; const val SPELLMAX = 20
+        const val GOLD = 21; const val PLEVEL = 22; const val AC = 23; const val WC = 24
+        const val EXP = 25; const val DLEVEL = 26; const val LEVELNAME = 27
+        const val EFFECTS = 28; const val CLASS = 29; const val SEX = 30
+        const val MSG_CHR = 31; const val MSG_FMT = 32; const val TEXT_CHR = 33; const val TEXT_FMT = 34
+        const val MAP_W = 35; const val MAP_H = 36; const val LINE_LEN = 37
+        const val MSG_LINES = 38; const val TEXT_LINES = 39
+    }
+
+    private val off = layout
+    private val snap = ByteArray(layout[F.SIZE])
+    private val buf: ByteBuffer = ByteBuffer.wrap(snap).order(ByteOrder.nativeOrder())
+    private val live: ByteBuffer = shared.duplicate().order(ByteOrder.nativeOrder())
+
+    val mapW = layout[F.MAP_W]
+    val mapH = layout[F.MAP_H]
+    val lineLen = layout[F.LINE_LEN]
+    val msgLines = layout[F.MSG_LINES]
+    val textLines = layout[F.TEXT_LINES]
+
+    /** Cheap check for "anything changed?" without copying. */
+    fun liveSeq(): Int = live.getInt(off[F.SEQ])
+
+    /** Copies the shared struct. Returns false if it isn't initialised yet. */
+    fun refresh(): Boolean {
+        val src = live.duplicate()
+        src.position(0)
+        src.get(snap, 0, snap.size)
+        return buf.getInt(off[F.MAGIC]) == MAGIC
+    }
+
+    private fun i(f: Int) = buf.getInt(off[f])
+
+    val seq get() = i(F.SEQ)
+    val displayMode get() = i(F.DISPLAY)
+    val inputMode get() = i(F.INPUT)
+    val caret get() = i(F.CARET) != 0
+    val cursorX get() = i(F.CX)
+    val cursorY get() = i(F.CY)
+    val beepCount get() = i(F.BEEP)
+    val playerX get() = i(F.PX)
+    val playerY get() = i(F.PY)
+    val playerCursor get() = i(F.PCURSOR) != 0
+    val hp get() = i(F.HP)
+    val hpMax get() = i(F.HPMAX)
+    val spells get() = i(F.SPELLS)
+    val spellMax get() = i(F.SPELLMAX)
+    val gold get() = i(F.GOLD)
+    val playerLevel get() = i(F.PLEVEL)
+    val effects get() = i(F.EFFECTS)
+    val classNum get() = i(F.CLASS)
+
+    val answers: String get() = cString(off[F.ANSWERS], 64)
+    val status1: String get() = cString(off[F.STATUS1], 96)
+    val status2: String get() = cString(off[F.STATUS2], 96)
+    val levelName: String get() = cString(off[F.LEVELNAME], 8).trim()
+
+    fun tile(x: Int, y: Int): Int = buf.getShort(off[F.TILES] + 2 * (y * mapW + x)).toInt()
+    fun overlay(x: Int, y: Int): Int = buf.getShort(off[F.OVERLAY] + 2 * (y * mapW + x)).toInt()
+
+    /** Character at (col, row) of the message area (map mode). */
+    fun msgChar(row: Int, col: Int): Char = (snap[off[F.MSG_CHR] + row * (lineLen + 1) + col].toInt() and 0xff).toChar()
+    fun msgFmt(row: Int, col: Int): Int = snap[off[F.MSG_FMT] + row * lineLen + col].toInt() and 0xff
+
+    /** Character at (col, row) of the full text page (text mode). */
+    fun textChar(row: Int, col: Int): Char = (snap[off[F.TEXT_CHR] + row * (lineLen + 1) + col].toInt() and 0xff).toChar()
+    fun textFmt(row: Int, col: Int): Int = snap[off[F.TEXT_FMT] + row * lineLen + col].toInt() and 0xff
+
+    private fun cString(at: Int, max: Int): String {
+        var n = 0
+        while (n < max && snap[at + n].toInt() != 0) n++
+        return String(snap, at, n, Charsets.ISO_8859_1)
+    }
+
+    companion object {
+        const val MAGIC = 0x554C524E
+
+        const val DISPLAY_MAP = 0
+        const val DISPLAY_TEXT = 1
+
+        const val INPUT_BUSY = 0
+        const val INPUT_COMMAND = 1
+        const val INPUT_PROMPT = 2
+        const val INPUT_DIR = 3
+        const val INPUT_NUMBER = 4
+        const val INPUT_PASSWORD = 5
+
+        const val FMT_NORMAL = 0
+        const val FMT_STANDOUT = 1
+        const val FMT_STANDOUT2 = 2
+        const val FMT_STANDOUT3 = 3
+        const val FMT_BOLD = 4
+        const val FMT_INVERSE = 5
+
+        const val TILE_CURSOR = 174
+
+        /** Bit i of [effects], in the order the front end reports them. */
+        val EFFECT_NAMES = listOf(
+            "Stealth", "Undead Pro", "Spirit Pro", "Charm", "Time Stop", "Hold Monst",
+            "Giant Str", "Fire Resist", "Dexterity", "Strength", "Scare", "Haste Self",
+            "Cancel", "Invisible", "Protect 3", "Protect 2", "Wall-Walk",
+        )
+    }
+}
