@@ -25,6 +25,8 @@ import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.SeekBar
+import android.widget.Spinner
+import android.widget.ArrayAdapter
 import android.widget.TextView
 import android.widget.Toast
 import com.ularn.android.controls.ButtonAction
@@ -81,6 +83,11 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
             onZoomChanged = { settings.tileDp = it }
         }
         overlay = ControlsOverlay(this).apply { listener = this@MainActivity }
+        // Recompute the map area after the new size is known (rotation,
+        // split screen, foldables) - not before, as onConfigurationChanged is.
+        overlay.addOnLayoutChangeListener { _, l, t, r, b, ol, ot, or_, ob ->
+            if (r - l != or_ - ol || b - t != ob - ot) updateMapReserve()
+        }
 
         session = GameSession(
             this,
@@ -105,6 +112,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         }
 
         applySettings()
+        applyRotationSetting()
         applyOrientation(resources.configuration)
         showStartPanel(true)
     }
@@ -116,8 +124,12 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        if (overlay.editMode) finishEditing(save = true)
-        applyOrientation(newConfig)
+        val nowLandscape = newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE
+        if (nowLandscape != landscape) {
+            if (overlay.editMode) finishEditing(save = true)
+            setKeyboard(false)
+            applyOrientation(newConfig)
+        }
     }
 
     override fun onStop() {
@@ -208,9 +220,22 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
     private fun applySettings() {
         game.arrowsAsMoves = settings.arrowsAsMoves
         game.tapToMove = settings.tapToMove
+        game.swipeToMove = settings.swipeToMove
+        game.flickToRun = settings.flickToRun
         game.tileDp = settings.tileDp
         if (::overlay.isInitialized) game.haptics = overlay.layout.haptics
         if (::overlay.isInitialized) updateMapReserve()
+    }
+
+    private fun applyRotationSetting() {
+        requestedOrientation = Settings.ORIENTATIONS
+            .getOrElse(settings.orientation) { Settings.ORIENTATIONS[0] }.second
+    }
+
+    /** Menu shortcut: lock to the other orientation. */
+    private fun toggleOrientation() {
+        settings.orientation = if (landscape) Settings.ORIENT_PORTRAIT else Settings.ORIENT_LANDSCAPE
+        applyRotationSetting()
     }
 
     // --------------------------------------------------------------- game
@@ -534,6 +559,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         }
         val items = arrayOf(
             if (keyboardShown) "Hide keyboard" else "Show keyboard",
+            if (landscape) "Switch to portrait" else "Switch to landscape",
             "Edit controls",
             "Settings",
             "Game help (?)",
@@ -543,11 +569,12 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         AlertDialog.Builder(this).setItems(items) { _, which ->
             when (which) {
                 0 -> setKeyboard(!keyboardShown)
-                1 -> startEditing()
-                2 -> showSettings()
-                3 -> session.send(byteArrayOf('?'.code.toByte()))
-                4 -> { quitAfterExit = true; session.send(byteArrayOf('S'.code.toByte())) }
-                5 -> AlertDialog.Builder(this)
+                1 -> toggleOrientation()
+                2 -> startEditing()
+                3 -> showSettings()
+                4 -> session.send(byteArrayOf('?'.code.toByte()))
+                5 -> { quitAfterExit = true; session.send(byteArrayOf('S'.code.toByte())) }
+                6 -> AlertDialog.Builder(this)
                     .setMessage("Leave now? The game is checkpointed, so \"Resume from checkpoint\" picks up from here (or from your last few moves if you're in the middle of a menu).")
                     .setPositiveButton("Leave") { _, _ -> quitAfterExit = true; session.leave() }
                     .setNegativeButton("Cancel", null).show()
@@ -575,7 +602,19 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         check("No beeping", settings.noBeep) { settings.noBeep = it }
         check("Enhanced interface: open doors with 'o', chests with 'O'", settings.enhancedInterface) { settings.enhancedInterface = it }
 
+        header("Screen rotation")
+        val rotation = Spinner(this).apply {
+            adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, Settings.ORIENTATIONS.map { it.first })
+            setSelection(settings.orientation.coerceIn(0, Settings.ORIENTATIONS.size - 1))
+        }
+        box.addView(rotation)
+        box.addView(TextView(this).apply {
+            text = "Portrait and landscape each keep their own control layout."; textSize = 12f; alpha = 0.7f
+        })
+
         header("Map")
+        check("Swipe to step, hold to keep walking", settings.swipeToMove) { settings.swipeToMove = it }
+        check("Quick flick runs (instead of one step)", settings.flickToRun) { settings.flickToRun = it }
         check("Tap a square to step towards it (long-press to run)", settings.tapToMove) { settings.tapToMove = it }
         check("Landscape: fit the map beside the controls", settings.fitMapBesideControls) { settings.fitMapBesideControls = it }
         box.addView(Button(this).apply {
@@ -592,7 +631,9 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
             .setView(ScrollView(this).apply { addView(box) })
             .setPositiveButton("OK") { _, _ ->
                 settings.playerName = name.text.toString()
+                settings.orientation = rotation.selectedItemPosition
                 applySettings()
+                applyRotationSetting()
             }
             .show()
     }

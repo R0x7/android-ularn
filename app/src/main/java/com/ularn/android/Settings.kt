@@ -39,6 +39,21 @@ class Settings(context: Context) {
         get() = p.getBoolean("tapMove", true)
         set(v) = p.edit().putBoolean("tapMove", v).apply()
 
+    /** Swipe on the map to step; hold to keep walking. */
+    var swipeToMove: Boolean
+        get() = p.getBoolean("swipeMove", true)
+        set(v) = p.edit().putBoolean("swipeMove", v).apply()
+
+    /** A quick flick on the map runs instead of stepping. */
+    var flickToRun: Boolean
+        get() = p.getBoolean("flickRun", false)
+        set(v) = p.edit().putBoolean("flickRun", v).apply()
+
+    /** See [ORIENTATIONS]. */
+    var orientation: Int
+        get() = p.getInt("orientation", 0)
+        set(v) = p.edit().putInt("orientation", v).apply()
+
     /** Landscape: keep the map clear of the side controls. */
     var fitMapBesideControls: Boolean
         get() = p.getBoolean("fitBeside", true)
@@ -53,6 +68,18 @@ class Settings(context: Context) {
     var tileDp: Float
         get() = p.getFloat("tileDp", 0f)
         set(v) = p.edit().putFloat("tileDp", v).apply()
+
+    companion object {
+        /** Rotation choices: label to ActivityInfo.screenOrientation. */
+        val ORIENTATIONS = listOf(
+            "Follow system rotation setting" to android.content.pm.ActivityInfo.SCREEN_ORIENTATION_FULL_USER,
+            "Always auto-rotate" to android.content.pm.ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR,
+            "Portrait" to android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT,
+            "Landscape" to android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE,
+        )
+        const val ORIENT_PORTRAIT = 2
+        const val ORIENT_LANDSCAPE = 3
+    }
 
     /** Builds Ularn 1.6.3a's ularn.opt: "OPTION name:X,gender:male,...". */
     fun buildOptsFile(): String {

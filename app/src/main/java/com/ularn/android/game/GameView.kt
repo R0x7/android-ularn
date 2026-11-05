@@ -21,6 +21,7 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
 import kotlin.math.atan2
+import kotlin.math.hypot
 
 /**
  * Draws Ularn 1.6.3a's display from [GameState]:
@@ -50,6 +51,9 @@ class GameView(context: Context) : View(context) {
 
     var arrowsAsMoves = true
     var tapToMove = true
+    var swipeToMove = true
+    /** A quick flick runs (H/J/K/L...). Off: every swipe is a step, with no delay. */
+    var flickToRun = false
     var haptics = true
 
     /** Preferred tile size in dp (0 = automatic). */
@@ -126,7 +130,7 @@ class GameView(context: Context) : View(context) {
     }
 
     override fun onAttachedToWindow() { super.onAttachedToWindow(); postDelayed(blink, 530) }
-    override fun onDetachedFromWindow() { removeCallbacks(blink); super.onDetachedFromWindow() }
+    override fun onDetachedFromWindow() { removeCallbacks(blink); endSwipe(); super.onDetachedFromWindow() }
 
     // ------------------------------------------------------------- draw
 
@@ -151,6 +155,25 @@ class GameView(context: Context) : View(context) {
         else drawMapMode(canvas, s, area)
 
         if (chips.isNotEmpty()) drawChips(canvas, RectF(content.left, content.bottom - chipH, content.right, content.bottom))
+        if (swipeActive) drawSwipe(canvas)
+    }
+
+    private fun drawSwipe(canvas: Canvas) {
+        val r = dp(34f)
+        fill.style = Paint.Style.STROKE
+        fill.strokeWidth = dp(2f)
+        fill.color = Color.argb(150, 255, 255, 255)
+        canvas.drawCircle(swipeStartX, swipeStartY, r, fill)
+        fill.style = Paint.Style.FILL
+        val d = swipeDir ?: return
+        val (dx, dy) = DIR_VEC.getValue(d)
+        val len = hypot(dx.toFloat(), dy.toFloat())
+        val ex = swipeStartX + dx / len * r
+        val ey = swipeStartY + dy / len * r
+        fill.color = Color.argb(220, 255, 190, 60)
+        fill.strokeWidth = dp(4f)
+        canvas.drawLine(swipeStartX, swipeStartY, ex, ey, fill)
+        canvas.drawCircle(ex, ey, dp(7f), fill)
     }
 
     /** Before the first game the start menu covers the screen; nothing to draw. */
@@ -415,9 +438,7 @@ class GameView(context: Context) : View(context) {
         val dy = ty - s.playerY
         if (dx == 0 && dy == 0) return null
         // 8 sectors by angle so far taps still pick a sensible direction
-        var deg = Math.toDegrees(atan2(-dy.toDouble(), dx.toDouble()))
-        if (deg < 0) deg += 360.0
-        return "lukyhbjn"[(((deg + 22.5) % 360) / 45).toInt()]
+        return sectorDir(dx.toFloat(), dy.toFloat())
     }
 
     private val gestures = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
@@ -461,12 +482,143 @@ class GameView(context: Context) : View(context) {
         }
     })
 
+    // ------------------------------------------------------------ swipes
+    //
+    // Swipe on the map: one step in that direction. Keep the finger down to
+    // keep walking (steer by moving it around the starting point, like a
+    // joystick). With flickToRun, a quick flick runs instead. In a direction
+    // prompt a swipe answers it.
+
+    private var swipeStartX = 0f
+    private var swipeStartY = 0f
+    private var swipeDownTime = 0L
+    private var swipeActive = false
+    private var swipeDir: Char? = null
+    private var swipeStepped = false
+
+    private val swipeRepeat = object : Runnable {
+        override fun run() {
+            val s = state
+            val d = swipeDir
+            if (swipeActive && d != null && s != null && s.inputMode == GameState.INPUT_COMMAND) {
+                send(byteArrayOf(d.code.toByte()))
+                swipeStepped = true
+            }
+            if (swipeActive) postDelayed(this, SWIPE_REPEAT_MS)
+        }
+    }
+
+    private fun swipeAllowed(s: GameState?): Boolean =
+        swipeToMove && running && s != null && s.displayMode == GameState.DISPLAY_MAP &&
+            (s.inputMode == GameState.INPUT_COMMAND || s.inputMode == GameState.INPUT_DIR)
+
+    private fun inSwipeArea(x: Float, y: Float): Boolean =
+        mapRect.contains(x, y) && chips.none { it.rect.contains(x, y) }
+
+    private fun sectorDir(dx: Float, dy: Float): Char {
+        var deg = Math.toDegrees(atan2(-dy.toDouble(), dx.toDouble()))
+        if (deg < 0) deg += 360.0
+        return "lukyhbjn"[(((deg + 22.5) % 360) / 45).toInt()]
+    }
+
+    /** Returns true if the event was consumed as part of a swipe. */
+    private fun handleSwipe(e: MotionEvent): Boolean {
+        val s = state
+        when (e.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                swipeActive = false; swipeDir = null; swipeStepped = false
+                swipeStartX = e.x; swipeStartY = e.y; swipeDownTime = e.eventTime
+                return false
+            }
+            MotionEvent.ACTION_MOVE -> {
+                if (pinching || e.pointerCount > 1) { endSwipe(); return false }
+                if (!swipeActive && (!swipeAllowed(s) || !inSwipeArea(swipeStartX, swipeStartY))) return false
+                val dx = e.x - swipeStartX
+                val dy = e.y - swipeStartY
+                if (hypot(dx, dy) < dp(SWIPE_THRESHOLD_DP)) return swipeActive
+                val d = sectorDir(dx, dy)
+                if (!swipeActive) {
+                    swipeActive = true
+                    swipeDir = d
+                    removeCallbacks(swipeRepeat)
+                    if (flickToRun) {
+                        // Wait briefly before the first step so a flick can become a run.
+                        postDelayed(firstStep, FLICK_MS)
+                    } else {
+                        firstStep.run()
+                    }
+                    invalidate()
+                } else if (d != swipeDir) {
+                    swipeDir = d
+                    if (swipeStepped && s?.inputMode == GameState.INPUT_COMMAND) {
+                        send(byteArrayOf(d.code.toByte()))
+                        removeCallbacks(swipeRepeat)
+                        postDelayed(swipeRepeat, SWIPE_HOLD_MS)
+                    }
+                    invalidate()
+                }
+                return true
+            }
+            MotionEvent.ACTION_UP -> {
+                if (!swipeActive) return false
+                val d = swipeDir
+                val quick = flickToRun && e.eventTime - swipeDownTime < FLICK_MS
+                if (!swipeStepped && d != null && s != null) {
+                    if (s.inputMode == GameState.INPUT_DIR) send(byteArrayOf(d.code.toByte()))
+                    else if (quick) send(byteArrayOf(d.uppercaseChar().code.toByte()))   // flick: run
+                    else send(byteArrayOf(d.code.toByte()))
+                }
+                endSwipe()
+                return true
+            }
+            MotionEvent.ACTION_CANCEL -> { val was = swipeActive; endSwipe(); return was }
+        }
+        return swipeActive
+    }
+
+    /** First step of a held swipe (fires unless the gesture ended as a flick). */
+    private val firstStep = Runnable {
+        val s = state
+        val d = swipeDir
+        if (swipeActive && d != null && s != null && !swipeStepped) {
+            send(byteArrayOf(d.code.toByte()))
+            swipeStepped = true
+            if (s.inputMode == GameState.INPUT_COMMAND) postDelayed(swipeRepeat, SWIPE_HOLD_MS)
+        }
+    }
+
+    private fun endSwipe() {
+        removeCallbacks(firstStep)
+        removeCallbacks(swipeRepeat)
+        if (swipeActive) { swipeActive = false; swipeDir = null; invalidate() }
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         scaleDetector.onTouchEvent(event)
         if (event.actionMasked == MotionEvent.ACTION_DOWN) pinching = false
         if (event.pointerCount > 1) pinching = true
+        if (handleSwipe(event)) {
+            // Keep the gesture detector from also seeing a tap / long-press.
+            val cancel = MotionEvent.obtain(event).apply { action = MotionEvent.ACTION_CANCEL }
+            gestures.onTouchEvent(cancel)
+            cancel.recycle()
+            return true
+        }
         gestures.onTouchEvent(event)
         return true
+    }
+
+    companion object {
+        private const val SWIPE_THRESHOLD_DP = 28f
+        /** A swipe that ends within this time is a flick (= run). */
+        private const val FLICK_MS = 180L
+        /** Hold this long after the first step before walking continuously. */
+        private const val SWIPE_HOLD_MS = 320L
+        private const val SWIPE_REPEAT_MS = 150L
+        private val DIR_VEC = mapOf(
+            'l' to (1 to 0), 'h' to (-1 to 0), 'k' to (0 to -1), 'j' to (0 to 1),
+            'u' to (1 to -1), 'y' to (-1 to -1), 'n' to (1 to 1), 'b' to (-1 to 1),
+        )
     }
 
     // --------------------------------------------------------- keyboard

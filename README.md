@@ -34,8 +34,16 @@ Requires Android 7.0+ (API 24). Builds for arm64-v8a, armeabi-v7a and x86_64.
   scoreboard, settings and the control editor.
 - **Back button** opens the in-game menu (keyboard, edit controls, settings,
   help, save & quit).
-- **Map:** the view follows your character; pinch to zoom. Tap a square to
-  step towards it, long-press to run. In landscape the map fits between your
+- **Map:** the view follows your character; pinch to zoom.
+  - **Swipe** anywhere on the map to step in that direction (8-way);
+    **keep holding** to keep walking, and slide your finger to steer.
+    Optional: a quick **flick runs** (Settings → *Quick flick runs*).
+  - **Tap** a square to step towards it, **long-press** to run.
+  - A swipe also answers "In what direction?" prompts.
+- **Portrait and landscape** both work, each with its own control layout.
+  Settings → *Screen rotation* can follow the system, always auto-rotate
+  (even with rotation lock on), or lock portrait / landscape; the menu also
+  has *Switch to landscape / portrait*. In landscape the map fits between your
   side controls (toggle in Settings).
 - **Prompts:** whenever the game asks a question (y/n, pick an item, a store
   menu, how much gold), buttons for the valid answers appear under the map.
