@@ -18,9 +18,11 @@ install the NDK and CMake 3.22.1 if missing), then Run ▶ on a device.
 ./gradlew installDebug           # build and install on a connected device
 ```
 
-**No Android tools at all:** push this folder to a GitHub repository. The
-included workflow (`.github/workflows/build.yml`) builds the APK on every push;
-download it from the run's *Artifacts*.
+**Just want to install it:** on your phone, open
+https://github.com/R0x7/android-ularn/releases/latest/download/ularn.apk
+and tap the download to install. Every push to `main` builds a new APK
+(`.github/workflows/build.yml`) and publishes it as the latest release, so
+that link always gets the newest version.
 
 Requires Android 7.0+ (API 24). Builds for arm64-v8a, armeabi-v7a and x86_64.
 
