@@ -3,6 +3,6 @@
  * web/leaderboard.sql permits (read the table, call submit_score).
  * Leave them empty to hide the leaderboard. */
 window.ULARN_LEADERBOARD = {
-  url: '',   // e.g. 'https://abcdefghijkl.supabase.co'
-  key: '',   // the project's anon / publishable key
+  url: 'https://flvmzwnucrufhmxxaubo.supabase.co',
+  key: 'sb_publishable_D3VptjdF3Mpfqkg7dC7msA_TrM0eELk',
 };
