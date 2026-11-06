@@ -1,4 +1,23 @@
-# Ularn for Android
+# Ularn for Android — Wild Edition (experimental branch)
+
+> This branch is **Ularn: Wild Edition**: the same port with a pile of
+> deliberately off-the-wall features bolted on (chiptune radio, monster
+> trading cards, vending machines, hats, a parody cryptocurrency, a glitch
+> realm, fishing, pets, level-up perks, weather and a Polaroid camera). It
+> installs beside the normal app as **"Ularn Wild"** with its own saves.
+>
+> **Install:** on your phone open
+> https://github.com/R0x7/android-ularn/releases/download/wild-latest/ularn-wild.apk
+> (every push to this branch rebuilds it). Each feature is described in
+> [`docs/wild/`](docs/wild/README.md) and can be switched off in
+> Settings → *Wild features*; the design brief and agent plan is
+> [`docs/WILD_EDITION_PLAN.md`](docs/WILD_EDITION_PLAN.md). The core game
+> is unchanged with every feature off.
+>
+> For developers: `tools/host/` plays the real game on Linux from a key
+> script (no device needed), `tools/tiles/` composes text-authored pixel
+> art onto the tile sheet. See `tools/host/README.md`.
+
 
 An Android port of **Ularn 1.6.3a** (Julian Olds' graphical version, from
 [R0x7/ularn-1.6.3a](https://github.com/R0x7/ularn-1.6.3a)), with the original
