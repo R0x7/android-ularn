@@ -1,13 +1,16 @@
 name: Web build (GitHub Pages)
 
 # Builds the browser version (web/, Emscripten) and publishes it to the
-# gh-pages branch, which GitHub Pages serves at
-# https://<owner>.github.io/<repo>/  (Settings -> Pages -> Deploy from a
-# branch -> gh-pages, / (root); needed once).
+# gh-pages branch, which GitHub Pages serves at https://<owner>.github.io/<repo>/
+# (Settings -> Pages -> Deploy from a branch -> gh-pages, / (root)).
+#
+# This runs for pushes to the web branch itself. Pushes to ularn-wild are
+# handled by web-sync.yml (on ularn-wild), which merges them into the web
+# branch and publishes in one go.
 on:
   push:
-    branches: [main, ularn-wild, ccr-fa7a4c55-ev0a7r]
-    paths: [web/**, app/src/main/cpp/**, app/src/main/assets/**, .github/workflows/web.yml]
+    branches: [ccr-fa7a4c55-ev0a7r]
+    paths: [web/**, app/src/main/cpp/**, app/src/main/assets/**, .github/workflows/web*.yml]
   workflow_dispatch:
 
 permissions:
@@ -15,7 +18,7 @@ permissions:
 
 concurrency:
   group: web-pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   web:
@@ -31,15 +34,6 @@ jobs:
           name: ularn-web
           path: web/site
       - name: Publish to gh-pages
-        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          cd web/site
-          touch .nojekyll
-          git init -q
-          git checkout -q -b gh-pages
-          git add -A
-          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-            commit -qm "Web build from ${GITHUB_REF_NAME} ${GITHUB_SHA}"
-          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+        run: web/publish.sh "${GITHUB_REF_NAME} ${GITHUB_SHA}"

@@ -11,9 +11,10 @@ OUT=site
 mkdir -p $OUT obj
 SRCS=$(sed -n '/add_library(ularn_game STATIC/,/)/p' $CPP/CMakeLists.txt | tr ' ' '\n' | tr -d ')' | grep -E '\.c$' | sed "s#\${U}/#$CPP/ularn/#; s#^compat/#$CPP/compat/#")
 CFLAGS="-O2 -fsigned-char -std=gnu99 -w -Wno-implicit-function-declaration -Wno-int-conversion -Wno-incompatible-pointer-types -Wno-return-type"
-# Game sources get the shim (main -> ularn_main, exit -> ularn_exit).
+# Game sources get the Android shim (main -> ularn_main, exit -> ularn_exit)
+# and web_shim.h (key pipe read / usleep -> web_main.c).
 for f in $SRCS; do
-  emcc $CFLAGS -include $CPP/compat/android_shim.h -I$CPP/compat -I$CPP/ularn -I$CPP -c "$f" -o "obj/$(basename "$f" .c).o"
+  emcc $CFLAGS -include $CPP/compat/android_shim.h -include web_shim.h -I$CPP/compat -I$CPP/ularn -I$CPP -c "$f" -o "obj/$(basename "$f" .c).o"
 done
 emcc -O2 -I$CPP -c web_main.c -o obj/web_main.o
 

@@ -2,8 +2,8 @@
  *
  * The web counterpart of app/src/main/cpp/spawn.c + ularn_jni.c. The game
  * sources and the Android front end (compat/ularn_winandroid.c) are compiled
- * unchanged apart from two #ifdef __EMSCRIPTEN__ spots there: read_key()
- * takes keys from ularn_web_pop_key() and nap() yields with emscripten_sleep.
+ * unchanged; web_shim.h routes their read() of the key pipe and usleep()
+ * here (ularn_web_read / ularn_web_usleep), which yield with emscripten_sleep.
  *
  *  - display state: the same UlarnShared struct, here a static in wasm
  *    memory; the page reads it through HEAP views (offsets: ularn_web_layout).
@@ -44,7 +44,7 @@ EMSCRIPTEN_KEEPALIVE void ularn_web_push_key(int ch)
   kq_tail = next;
 }
 
-int ularn_web_pop_key(void)
+static int ularn_web_pop_key(void)
 {
   int ch;
   if (kq_head == kq_tail) return -1;
@@ -59,6 +59,27 @@ EM_JS(unsigned int, web_random32, (void), {
   var a = new Uint32Array(1); crypto.getRandomValues(a); return a[0];
 });
 unsigned int arc4random(void) { return web_random32(); }
+
+/* The key "pipe": read_key() reads ularn_input_fd, which here is a made-up
+ * fd number; any other fd is a real file. */
+#define WEB_INPUT_FD 1000
+extern int ularn_input_fd;
+
+ssize_t ularn_web_read(int fd, void *buf, size_t n)
+{
+  int k;
+  if (fd != WEB_INPUT_FD) return read(fd, buf, n);
+  if (n == 0) return 0;
+  while ((k = ularn_web_pop_key()) < 0) emscripten_sleep(16);
+  *(unsigned char *) buf = (unsigned char) k;
+  return 1;
+}
+
+int ularn_web_usleep(unsigned int usec)
+{
+  emscripten_sleep(usec / 1000);
+  return 0;
+}
 
 EMSCRIPTEN_KEEPALIVE UlarnShared *ularn_web_state(void) { return &state; }
 
@@ -126,6 +147,7 @@ EMSCRIPTEN_KEEPALIVE void ularn_web_run(int wild, int restore_ckp)
   state.version = US_VERSION;
   state.class_num = -1;
   ularn_shared = &state;
+  ularn_input_fd = WEB_INPUT_FD;
 
   gargv[gargc++] = "ularn";
   if (restore_ckp) gargv[gargc++] = "-r";

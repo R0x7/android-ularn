@@ -32,13 +32,6 @@
 #include "wild.h"
 #include "wild_glitch.h"
 
-#ifdef __EMSCRIPTEN__
-/* Web build (web/): no processes or pipes. Keys come from a JavaScript queue
- * and the game yields to the browser (Asyncify) while it waits or naps. */
-#include <emscripten.h>
-int ularn_web_pop_key(void);   /* web/web_main.c: next key, or -1 */
-#endif
-
 /* Wiring, set up by spawn.c in the child before ularn_main() runs. */
 UlarnShared *ularn_shared = NULL;
 int ularn_input_fd = -1;
@@ -208,14 +201,6 @@ static int read_key(void)
   unsigned char ch;
   ssize_t n;
 
-#ifdef __EMSCRIPTEN__
-  {
-    int k;
-    (void) n;
-    while ((k = ularn_web_pop_key()) < 0) emscripten_sleep(16);
-    ch = (unsigned char) k;
-  }
-#else
   for (;;)
   {
     n = read(ularn_input_fd, &ch, 1);
@@ -224,7 +209,6 @@ static int read_key(void)
     /* App closed the pipe: leave like a hang-up. */
     ularn_exit(1);
   }
-#endif
 
   /* Normalise what touch / soft keyboards send to what the game expects. */
   if (ch == '\n') ch = '\r';
@@ -1048,11 +1032,7 @@ void magic_effect(int x, int y, MagicEffectsType fx, int frame)
 void nap(int delay)
 {
   publish();
-#ifdef __EMSCRIPTEN__
-  emscripten_sleep(delay > 0 ? delay : 0);
-#else
   if (delay > 0) usleep((useconds_t) delay * 1000);
-#endif
 }
 
 void GetUser(char *username, int *uid)
