@@ -49,6 +49,7 @@ import com.ularn.android.cards.CardDrops
 import com.ularn.android.cards.MonsterFacts
 import com.ularn.android.a11y.AccessibilitySettingsUi
 import com.ularn.android.a11y.MessageAnnouncer
+import com.ularn.android.audio.Radio
 import com.ularn.android.saves.SlotsController
 
 class MainActivity : Activity(), ControlsOverlay.Listener {
@@ -65,6 +66,8 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
     private lateinit var a11yPrefs: AccessibilityPrefs
     private lateinit var announcer: MessageAnnouncer
     private lateinit var cards: CardDrops
+    /** Wild Edition: Dungeon Radio (music + sound effects). */
+    private lateinit var radio: Radio
 
     private lateinit var game: GameView
     private lateinit var overlay: ControlsOverlay
@@ -123,6 +126,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         game.state = session.state
         events = GameEvents { session.state }   // Wild Edition: C-side events (sound, cards...)
         cards = CardDrops(this, settings) { session.state?.runId ?: 0 }.also { events.addListener(it) }
+        radio = Radio(this, settings, { session.state }, { session.isRunning }).also { events.addListener(it) }
         val followUp = KeyFollowUp({ session.state }) { if (session.isRunning) session.send(it) }
         contextAction = ContextAction({ session.state }, { session.isRunning }, followUp) { overlay.contextUi = it }
         spellPicker = SpellPicker(this, { session.state }, { session.isRunning }, followUp) { if (session.isRunning) session.send(it) }
@@ -183,6 +187,16 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         game.textScale = scale; game.highContrast = a11yPrefs.highContrast
         overlay.textScale = scale; overlay.highContrast = a11yPrefs.highContrast
         announcer.enabled = a11yPrefs.announceMessages
+    }
+
+    override fun onResume() {
+        super.onResume()
+        radio.onResume()
+    }
+
+    override fun onPause() {
+        radio.onPause()   // no music while the app is in the background
+        super.onPause()
     }
 
     override fun onStop() {
@@ -613,31 +627,27 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
             if (startScroll.visibility != View.VISIBLE) showStartPanel(true) else finish()
             return
         }
-        val items = arrayOf(
-            if (keyboardShown) "Hide keyboard" else "Show keyboard",
-            if (landscape) "Switch to portrait" else "Switch to landscape",
-            "Edit controls",
-            "Settings",
-            "Game help (?)",
-            "Save game & quit",
-            "Leave (resume from checkpoint later)",
-            "Statistics & achievements",
-        ) + (if (cards.enabled) arrayOf("Card album") else emptyArray())
-        AlertDialog.Builder(this).setItems(items) { _, which ->
-            when (which) {
-                0 -> setKeyboard(!keyboardShown)
-                1 -> toggleOrientation()
-                2 -> startEditing()
-                3 -> showSettings()
-                4 -> session.send(byteArrayOf('?'.code.toByte()))
-                5 -> { quitAfterExit = true; session.send(byteArrayOf('S'.code.toByte())) }
-                6 -> AlertDialog.Builder(this)
+        // Label -> action, so features can append entries without index juggling.
+        val items = mutableListOf<Pair<String, () -> Unit>>(
+            (if (keyboardShown) "Hide keyboard" else "Show keyboard") to { setKeyboard(!keyboardShown) },
+            (if (landscape) "Switch to portrait" else "Switch to landscape") to { toggleOrientation() },
+            "Edit controls" to { startEditing() },
+            "Settings" to { showSettings() },
+            "Game help (?)" to { session.send(byteArrayOf('?'.code.toByte())) },
+            "Save game & quit" to { quitAfterExit = true; session.send(byteArrayOf('S'.code.toByte())) },
+            "Leave (resume from checkpoint later)" to {
+                AlertDialog.Builder(this)
                     .setMessage("Leave now? The game is checkpointed, so \"Resume from checkpoint\" picks up from here (or from your last few moves if you're in the middle of a menu).")
                     .setPositiveButton("Leave") { _, _ -> quitAfterExit = true; session.leave() }
                     .setNegativeButton("Cancel", null).show()
-                7 -> StatsDialog.show(this, tracker.book)
-                8 -> cards.showAlbum()
-            }
+            },
+            "Statistics & achievements" to { StatsDialog.show(this, tracker.book) },
+        )
+        // Wild Edition entries
+        if (cards.enabled) items += "Card album" to { cards.showAlbum() }
+        if (settings.wild(Settings.WILDF_RADIO)) items += "Radio" to { radio.showDialog() }
+        AlertDialog.Builder(this).setItems(items.map { it.first }.toTypedArray()) { _, which ->
+            items[which].second()
         }.show()
     }
 
