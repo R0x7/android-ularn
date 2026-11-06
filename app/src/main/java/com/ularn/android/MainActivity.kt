@@ -45,6 +45,8 @@ import com.ularn.android.stats.Achievement
 import com.ularn.android.stats.RunTracker
 import com.ularn.android.stats.StatsDialog
 import com.ularn.android.a11y.AccessibilityPrefs
+import com.ularn.android.cards.CardDrops
+import com.ularn.android.cards.MonsterFacts
 import com.ularn.android.a11y.AccessibilitySettingsUi
 import com.ularn.android.a11y.MessageAnnouncer
 import com.ularn.android.saves.SlotsController
@@ -62,6 +64,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
     private lateinit var slotsUi: SlotsController
     private lateinit var a11yPrefs: AccessibilityPrefs
     private lateinit var announcer: MessageAnnouncer
+    private lateinit var cards: CardDrops
 
     private lateinit var game: GameView
     private lateinit var overlay: ControlsOverlay
@@ -119,6 +122,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         )
         game.state = session.state
         events = GameEvents { session.state }   // Wild Edition: C-side events (sound, cards...)
+        cards = CardDrops(this, settings) { session.state?.runId ?: 0 }.also { events.addListener(it) }
         val followUp = KeyFollowUp({ session.state }) { if (session.isRunning) session.send(it) }
         contextAction = ContextAction({ session.state }, { session.isRunning }, followUp) { overlay.contextUi = it }
         spellPicker = SpellPicker(this, { session.state }, { session.isRunning }, followUp) { if (session.isRunning) session.send(it) }
@@ -594,6 +598,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         slotsUi.populate(startPanel) { label, accent, action -> item(label, accent, action) }
         item("Scoreboard") { slotsUi.useNoSlot(); startGame(listOf("-s")) }
         item("Statistics & achievements") { StatsDialog.show(this, tracker.book) }
+        if (cards.enabled) item("Card album (${cards.album.collected}/${MonsterFacts.COUNT})") { cards.showAlbum() }
         item("Edit controls") { startEditing() }
         item("Settings") { showSettings() }
         item("Quit") { finish() }
@@ -617,7 +622,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
             "Save game & quit",
             "Leave (resume from checkpoint later)",
             "Statistics & achievements",
-        )
+        ) + (if (cards.enabled) arrayOf("Card album") else emptyArray())
         AlertDialog.Builder(this).setItems(items) { _, which ->
             when (which) {
                 0 -> setKeyboard(!keyboardShown)
@@ -631,6 +636,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
                     .setPositiveButton("Leave") { _, _ -> quitAfterExit = true; session.leave() }
                     .setNegativeButton("Cancel", null).show()
                 7 -> StatsDialog.show(this, tracker.book)
+                8 -> cards.showAlbum()
             }
         }.show()
     }
@@ -683,6 +689,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
 
         header("Wild features (new games start with these; a saved game keeps its own)")
         for ((bit, label) in Settings.WILD_FEATURES) check(label, settings.wild(bit)) { settings.setWild(bit, it) }
+        check("Card drop toasts: show each card as it drops", settings.cardToasts) { settings.cardToasts = it }
         CueSettings.addTo(this, box, settings)
 
         AccessibilitySettingsUi.addTo(box, a11yPrefs) { applyA11y() }
