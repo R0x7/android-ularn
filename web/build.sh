@@ -2,7 +2,8 @@
 # Builds the web version into web/site/: the real game (upstream core + the
 # Android front end, same source list as app/src/main/cpp/CMakeLists.txt)
 # compiled to WebAssembly with Emscripten, plus the page.
-#   web/build.sh            # needs emcc (Ubuntu: apt-get install emscripten)
+#   web/build.sh            # needs emcc 3.1.6 (Ubuntu 24.04: apt-get install emscripten;
+#                           #  CI uses the emscripten/emsdk:3.1.6 image)
 #   python3 -m http.server -d web/site 8000
 set -e
 cd "$(dirname "$0")"

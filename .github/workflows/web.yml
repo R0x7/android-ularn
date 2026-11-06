@@ -24,19 +24,12 @@ jobs:
   web:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    # Emscripten's own image, pinned to the version the web build is tested
+    # with (Ubuntu 24.04's apt package is also 3.1.6). No package install, so
+    # a hung apt mirror can't stall publishing.
+    container: emscripten/emsdk:3.1.6
     steps:
       - uses: actions/checkout@v4
-      # A hung package mirror once stalled this for 20+ minutes: time-box it
-      # and retry a few times.
-      - name: Install Emscripten
-        timeout-minutes: 12
-        run: |
-          for i in 1 2 3; do
-            timeout 240 sh -c 'sudo apt-get update -q -o Acquire::Retries=3 && sudo apt-get install -y -q -o Acquire::Retries=3 emscripten' && exit 0
-            echo "::warning::Emscripten install attempt $i failed or timed out; retrying"
-            sleep 10
-          done
-          exit 1
       - name: Build
         run: web/build.sh
       - uses: actions/upload-artifact@v4
