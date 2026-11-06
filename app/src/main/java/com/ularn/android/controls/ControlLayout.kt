@@ -13,6 +13,8 @@ enum class ButtonAction(val title: String) {
     KEYBOARD("Show / hide keyboard"),
     MENU("Open app menu"),
     EDIT("Edit controls"),
+    CONTEXT("Context action (take, stairs, enter, open…)"),
+    CAST("Cast spell (opens the spell list)"),
 }
 
 enum class ButtonShape { ROUNDED, CIRCLE }
@@ -145,7 +147,8 @@ object DefaultLayouts {
         Triple("rest", "Rest", "."), Triple("save", "Save", "S"), Triple("tele", "Tele", "Z"),
         Triple("menu", "☰", ""),
     )
-    private val SPECIAL = mapOf("run" to ButtonAction.RUN, "kbd" to ButtonAction.KEYBOARD, "menu" to ButtonAction.MENU)
+    private val SPECIAL = mapOf("run" to ButtonAction.RUN, "kbd" to ButtonAction.KEYBOARD, "menu" to ButtonAction.MENU,
+        "cast" to ButtonAction.CAST)
 
     /** @param w,h screen size in dp. */
     fun portrait(w: Float, h: Float): ControlLayout {
@@ -157,9 +160,10 @@ object DefaultLayouts {
         val bottom = h - M
         // right: 3x4 action grid
         b.grid(ACTIONS, 3, w - M, bottom, bw, bh, SPECIAL)
-        // left: d-pad, as big as the remaining width allows
-        val dia = b.snap(minOf(w - 2 * M - gridW - 2 * G, gridH, 200f))
-        b.dpad(M + dia / 2, bottom - gridH / 2, dia)
+        // left: context-action button on top, d-pad below it, as big as the remaining room allows
+        val dia = b.snap(minOf(w - 2 * M - gridW - 2 * G, gridH - bh - G, 200f))
+        b.btn("ctx", "Act", "", M + dia / 2, bottom - gridH + bh / 2, dia, bh, ButtonAction.CONTEXT)
+        b.dpad(M + dia / 2, bottom - (gridH - bh - G) / 2, dia)
         // utility row above both
         val rowCy = bottom - gridH - G - 20f
         val uw = b.snap(((w - 2 * M) - 6 * G) / 7).coerceIn(40f, 60f)
@@ -179,7 +183,8 @@ object DefaultLayouts {
         // left: d-pad bottom-left, run above it, small round buttons top-left
         val dia = b.snap(minOf(h - 2 * M - 56f - G, 190f))
         b.dpad(M + dia / 2, h - M - dia / 2, dia)
-        b.btn("run", "Run", "", M + dia / 2, h - M - dia - G - 22f, 64f, 44f, ButtonAction.RUN)
+        b.btn("run", "Run", "", M + 32f, h - M - dia - G - 22f, 64f, 44f, ButtonAction.RUN)
+        b.btn("ctx", "Act", "", M + 64f + G + (dia - 64f - G) / 2, h - M - dia - G - 22f, dia - 64f - G, 44f, ButtonAction.CONTEXT)
         b.row(listOf(Triple("kbd", "⌨", ""), Triple("help", "?", "?"), Triple("menu", "☰", "")),
             M, M + dia, M + 20f, 40f, 40f, SPECIAL, setOf("kbd", "menu", "help"))
         return ControlLayout(b.list, opacity = 0.5f)

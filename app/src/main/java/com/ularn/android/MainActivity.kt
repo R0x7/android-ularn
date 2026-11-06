@@ -36,13 +36,29 @@ import com.ularn.android.controls.ControlSpec
 import com.ularn.android.controls.ControlType
 import com.ularn.android.controls.ControlsOverlay
 import com.ularn.android.controls.LayoutStore
+import com.ularn.android.game.ContextAction
 import com.ularn.android.game.GameView
+import com.ularn.android.game.SidePanelController
+import com.ularn.android.game.KeyFollowUp
+import com.ularn.android.stats.Achievement
+import com.ularn.android.stats.RunTracker
+import com.ularn.android.stats.StatsDialog
+import com.ularn.android.a11y.AccessibilityPrefs
+import com.ularn.android.a11y.AccessibilitySettingsUi
+import com.ularn.android.a11y.MessageAnnouncer
+import com.ularn.android.saves.SlotsController
 
 class MainActivity : Activity(), ControlsOverlay.Listener {
 
     private lateinit var settings: Settings
     private lateinit var store: LayoutStore
     private lateinit var session: GameSession
+    private lateinit var contextAction: ContextAction
+    private lateinit var spellPicker: SpellPicker
+    private lateinit var tracker: RunTracker
+    private lateinit var slotsUi: SlotsController
+    private lateinit var a11yPrefs: AccessibilityPrefs
+    private lateinit var announcer: MessageAnnouncer
 
     private lateinit var game: GameView
     private lateinit var overlay: ControlsOverlay
@@ -56,6 +72,8 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
     private var keyboardShown = false
     private var quitAfterExit = false
     private var editBarAtTop = true
+    /** Tablet / foldable side panel (null until onCreate builds it). */
+    @Volatile private var sidePanel: SidePanelController? = null
     /** Layout snapshot taken when entering edit mode (for Cancel). */
     private var editBackup: ControlLayout? = null
 
@@ -75,6 +93,8 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
 
         settings = Settings(this)
         store = LayoutStore(this)
+        tracker = RunTracker(this).apply { onUnlocked = { showUnlocked(it) } }
+        a11yPrefs = AccessibilityPrefs(this)
 
         game = GameView(this).apply {
             onInput = { if (session.isRunning) session.send(it) }
@@ -91,16 +111,26 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
 
         session = GameSession(
             this,
-            onChanged = { game.postInvalidateOnAnimation() },
+            onChanged = { game.postInvalidateOnAnimation(); sidePanel?.changed(); contextAction.onGameChanged(); announcer.onStateChanged() },
             onExit = { onGameExit() },
         )
         game.state = session.state
+        val followUp = KeyFollowUp({ session.state }) { if (session.isRunning) session.send(it) }
+        contextAction = ContextAction({ session.state }, { session.isRunning }, followUp) { overlay.contextUi = it }
+        spellPicker = SpellPicker(this, { session.state }, { session.isRunning }, followUp) { if (session.isRunning) session.send(it) }
+        game.onFrame = { if (session.isRunning) tracker.observe(it) }
+        game.contentDescription = "Game screen"
+        announcer = MessageAnnouncer(game) { session.state }
+        slotsUi = SlotsController(this, session, settings, startGame = { startGame(it) },
+            refresh = { if (startScroll.visibility == View.VISIBLE) showStartPanel(true) })
+        slotsUi.migrate()
 
         val root = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
         root.addView(game, FrameLayout.LayoutParams(-1, -1))
         root.addView(overlay, FrameLayout.LayoutParams(-1, -1))
         buildEditBar(root)
         buildStartPanel(root)
+        sidePanel = SidePanelController(root, listOf(game, overlay)) { session.state }
         setContentView(root)
 
         root.setOnApplyWindowInsetsListener { v, insets ->
@@ -130,12 +160,28 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
             setKeyboard(false)
             applyOrientation(newConfig)
         }
+        applyA11y()   // font scale
+    }
+
+    @Deprecated("Deprecated in Java")
+    @Suppress("DEPRECATION")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
+        if (!slotsUi.onActivityResult(requestCode, resultCode, data)) super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    private fun applyA11y() {
+        if (!::overlay.isInitialized || !::announcer.isInitialized) return
+        val scale = a11yPrefs.effectiveScale(resources.configuration)
+        game.textScale = scale; game.highContrast = a11yPrefs.highContrast
+        overlay.textScale = scale; overlay.highContrast = a11yPrefs.highContrast
+        announcer.enabled = a11yPrefs.announceMessages
     }
 
     override fun onStop() {
         // Android may kill a backgrounded app without warning, so make sure a
         // fresh checkpoint exists ("Resume from checkpoint" next time).
-        if (session.isRunning) session.requestCheckpoint()
+        if (session.isRunning) { session.requestCheckpoint(); slotsUi.recordProgress() }
+        tracker.flush()
         super.onStop()
     }
 
@@ -223,6 +269,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
                     bottomTop = minOf(bottomTop, r.top)
                 }
             }
+            game.minimap.setAvoid(if (landscape) minOf(left, w * 0.3f) else 0f, if (landscape) minOf(right, w * 0.3f) else 0f)
             if (landscape) {
                 if (!settings.fitMapBesideControls) { left = 0f; right = 0f }
                 game.setReserve(minOf(left, w * 0.3f), minOf(right, w * 0.3f), 0f)
@@ -238,8 +285,12 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         game.swipeToMove = settings.swipeToMove
         game.flickToRun = settings.flickToRun
         game.tileDp = settings.tileDp
+        game.minimap.enabled = settings.showMinimap
+        sidePanel?.enabled = settings.sidePanel
         if (::overlay.isInitialized) game.haptics = overlay.layout.haptics
         if (::overlay.isInitialized) updateMapReserve()
+        game.danger.apply(settings)
+        applyA11y()
     }
 
     private fun applyRotationSetting() {
@@ -258,6 +309,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
     private fun startGame(args: List<String> = emptyList()) {
         showStartPanel(false)
         quitAfterExit = false
+        announcer.reset()
         if (!session.start(settings, args)) {
             toast("Couldn't start the game")
             showStartPanel(true)
@@ -268,6 +320,8 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
     }
 
     private fun onGameExit() {
+        tracker.onGameExit(session.state, session.hasSave() || session.hasCheckpoint())
+        slotsUi.recordProgress()
         game.running = false
         setKeyboard(false)
         if (quitAfterExit) { finish(); return }
@@ -286,6 +340,8 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
             ButtonAction.KEYBOARD -> setKeyboard(!keyboardShown)
             ButtonAction.MENU -> showMenu()
             ButtonAction.EDIT -> startEditing()
+            ButtonAction.CONTEXT -> contextAction.trigger()
+            ButtonAction.CAST -> spellPicker.onCastButton()
             else -> {}
         }
     }
@@ -365,7 +421,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
                 .setPositiveButton("Reset") { _, _ -> overlay.layout = store.reset(landscape, overlayWidthDp, overlayHeightDp); refreshEditBar() }
                 .setNegativeButton("Cancel", null).show()
         })
-        add(pill("⇅") { editBarAtTop = !editBarAtTop; positionEditBar() })
+        add(pill("⇅") { editBarAtTop = !editBarAtTop; positionEditBar() }.apply { contentDescription = "Move toolbar to the other edge" })
         add(pill("Cancel") { finishEditing(save = false) })
 
         editBarScroll = HorizontalScrollView(this).apply {
@@ -502,6 +558,8 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         }
         startTitle = TextView(this).apply {
             text = "ULARN"
+            contentDescription = "Ularn"
+            if (Build.VERSION.SDK_INT >= 28) isAccessibilityHeading = true
             textSize = 30f
             typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
             setTextColor(Color.rgb(255, 190, 60))
@@ -528,41 +586,15 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         fun item(label: String, accent: Boolean = false, action: () -> Unit) {
             startPanel.addView(pill(label, accent, action), LinearLayout.LayoutParams(-1, dp(44)).apply { topMargin = dp(8) })
         }
-        when {
-            session.hasSave() -> {
-                item("Continue saved game", accent = true) { startGame() }
-            }
-            session.hasCheckpoint() -> {
-                item("Resume from checkpoint", accent = true) { startGame(listOf("-r")) }
-                item("New game") { confirmNewGameOverCheckpoint() }
-            }
-            else -> item("New game", accent = true) { startGame() }
-        }
-        if (session.hasSave()) item("New game (discard save)") { confirmDiscardSave() }
-        item("Scoreboard") { startGame(listOf("-s")) }
+        // Save slots: continue / resume / new game / rename / delete / export / import.
+        slotsUi.populate(startPanel) { label, accent, action -> item(label, accent, action) }
+        item("Scoreboard") { slotsUi.useNoSlot(); startGame(listOf("-s")) }
+        item("Statistics & achievements") { StatsDialog.show(this, tracker.book) }
         item("Edit controls") { startEditing() }
         item("Settings") { showSettings() }
         item("Quit") { finish() }
         startScroll.visibility = View.VISIBLE
         startScroll.scrollTo(0, 0)
-    }
-
-    private fun confirmNewGameOverCheckpoint() {
-        AlertDialog.Builder(this)
-            .setMessage("Start a new game? The checkpoint will be discarded.")
-            .setPositiveButton("New game") { _, _ -> session.checkpointFile.delete(); startGame() }
-            .setNegativeButton("Cancel", null).show()
-    }
-
-    private fun confirmDiscardSave() {
-        AlertDialog.Builder(this)
-            .setMessage("Delete your saved game and start over?")
-            .setPositiveButton("Delete & start") { _, _ ->
-                session.saveFile.delete()
-                session.checkpointFile.delete()
-                startGame()
-            }
-            .setNegativeButton("Cancel", null).show()
     }
 
     // --------------------------------------------------------------- menu
@@ -580,6 +612,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
             "Game help (?)",
             "Save game & quit",
             "Leave (resume from checkpoint later)",
+            "Statistics & achievements",
         )
         AlertDialog.Builder(this).setItems(items) { _, which ->
             when (which) {
@@ -593,6 +626,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
                     .setMessage("Leave now? The game is checkpointed, so \"Resume from checkpoint\" picks up from here (or from your last few moves if you're in the middle of a menu).")
                     .setPositiveButton("Leave") { _, _ -> quitAfterExit = true; session.leave() }
                     .setNegativeButton("Cancel", null).show()
+                7 -> StatsDialog.show(this, tracker.book)
             }
         }.show()
     }
@@ -608,7 +642,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
             text = t; isChecked = v; setOnCheckedChangeListener { _, b -> set(b) }
         })
 
-        header("Character (applies to new games)")
+        header("Character (default for new games)")
         val name = EditText(this).apply { setText(settings.playerName); isSingleLine = true; hint = "Name" }
         box.addView(name)
         check("Female character", settings.female) { settings.female = it }
@@ -632,6 +666,8 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         check("Quick flick runs (instead of one step)", settings.flickToRun) { settings.flickToRun = it }
         check("Tap a square to step towards it (long-press to run)", settings.tapToMove) { settings.tapToMove = it }
         check("Landscape: fit the map beside the controls", settings.fitMapBesideControls) { settings.fitMapBesideControls = it }
+        check("Minimap (tap it to see the whole level)", settings.showMinimap) { settings.showMinimap = it }
+        check("Tablets / foldables: side panel with stats, map and inventory", settings.sidePanel) { settings.sidePanel = it }
         box.addView(Button(this).apply {
             text = "Reset map zoom"; isAllCaps = false
             setOnClickListener { settings.tileDp = 0f; game.tileDp = 0f; toast("Zoom reset") }
@@ -640,6 +676,9 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
 
         header("Keyboard")
         check("Arrow keys / numpad move (hardware keyboard)", settings.arrowsAsMoves) { settings.arrowsAsMoves = it }
+        CueSettings.addTo(this, box, settings)
+
+        AccessibilitySettingsUi.addTo(box, a11yPrefs) { applyA11y() }
 
         AlertDialog.Builder(this)
             .setTitle("Settings")
@@ -654,4 +693,10 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
     }
 
     private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
+
+    private fun showUnlocked(list: List<Achievement>) {
+        if (!settings.achievementToasts) return
+        val text = list.joinToString("\n") { "Achievement unlocked: ${it.title}" }
+        game.post { Toast.makeText(this, text, Toast.LENGTH_LONG).show() }
+    }
 }

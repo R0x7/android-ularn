@@ -23,6 +23,13 @@ import android.widget.TextView
 /** Builds the property sheet for one control. Works on a copy until Save. */
 object ControlEditorDialog {
 
+    private fun actionNote(a: ButtonAction): String = when (a) {
+        ButtonAction.CONTEXT -> "Changes with what you stand on: Pick up, Stairs, Enter, Open chest/door, " +
+            "Fountain, Altar… Dimmed when there's nothing to do. The label above is shown then."
+        ButtonAction.CAST -> "Opens a list of the spells you know. When the game isn't waiting for a command it just sends 'c'."
+        else -> ""
+    }
+
     fun show(
         context: Context,
         original: ControlSpec,
@@ -79,6 +86,11 @@ object ControlEditorDialog {
         if (c.type == ControlType.BUTTON) {
             header("Action")
             val actions = ButtonAction.values()
+            val actionNote = TextView(context).apply { textSize = 12f; alpha = 0.75f }
+            fun updateActionNote() {
+                actionNote.text = actionNote(c.action)
+                actionNote.visibility = if (actionNote.text.isEmpty()) View.GONE else View.VISIBLE
+            }
             val spinner = Spinner(context)
             spinner.adapter = ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, actions.map { it.title })
             spinner.setSelection(actions.indexOf(c.action))
@@ -86,10 +98,13 @@ object ControlEditorDialog {
                 override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
                     c.action = actions[pos]
                     keysSection.visibility = if (c.action == ButtonAction.KEYS) View.VISIBLE else View.GONE
+                    updateActionNote()
                 }
                 override fun onNothingSelected(p: AdapterView<*>?) {}
             }
             root.addView(spinner)
+            updateActionNote()
+            root.addView(actionNote)
 
             root.addView(keysSection)
             keysSection.addView(TextView(context).apply {

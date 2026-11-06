@@ -123,6 +123,25 @@ Java_com_ularn_android_NativeBridge_layout(JNIEnv *env, jclass cls)
         offsetof(UlarnShared, text_fmt),
         /* dimensions */
         US_MAP_W, US_MAP_H, US_LINE_LEN, US_MSG_LINES, US_TEXT_LINES,
+        /* minimap / side panel */
+        offsetof(UlarnShared, mm_cat), offsetof(UlarnShared, inv_text),
+        US_INV_SLOTS, US_INV_LEN,
+        /* context action / spells */
+        offsetof(UlarnShared, ctx_object),
+        offsetof(UlarnShared, ctx_kind),
+        offsetof(UlarnShared, ctx_flags),
+        offsetof(UlarnShared, ctx_doors),
+        offsetof(UlarnShared, ctx_name),
+        offsetof(UlarnShared, spell_count),
+        offsetof(UlarnShared, spell_known),
+        offsetof(UlarnShared, spell_codes),
+        US_CTX_NAME, US_SPELLS,
+        /* danger cues / stats */
+        offsetof(UlarnShared, run_id),
+        offsetof(UlarnShared, kills),
+        offsetof(UlarnShared, end_state),
+        offsetof(UlarnShared, end_score),
+        offsetof(UlarnShared, end_reason),
     };
     jintArray out;
     (void)cls;

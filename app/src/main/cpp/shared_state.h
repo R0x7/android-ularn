@@ -44,6 +44,33 @@
 #define US_FMT_BOLD      4
 #define US_FMT_INVERSE   5
 
+/* context action / spells (fields at the end of UlarnShared) */
+#define US_SPELLS   40           /* >= SPELL_COUNT (39 in 1.6.3a) */
+#define US_CTX_NAME 40
+
+/* ctx_kind: what the player could do with the square they stand on, or
+ * with a closed door next to them (see compat/android_context.c). */
+#define US_CTX_NONE        0   /* nothing to act on */
+#define US_CTX_INSPECT     1   /* a feature with nothing to do (statue, open door...) */
+#define US_CTX_TAKE        2   /* an item: '.' re-looks, then 't' takes */
+#define US_CTX_GOLD        3   /* gold: picked up by '.' */
+#define US_CTX_STAIRS_UP   4   /* '.' then 'u' */
+#define US_CTX_STAIRS_DOWN 5   /* '.' then 'd' */
+#define US_CTX_SHAFT_DOWN  6   /* volcanic shaft: '.' then 'c' */
+#define US_CTX_SHAFT_UP    7   /* '.' then 'c' */
+#define US_CTX_ENTER       8   /* building / dungeon entrance: '.' then 'g' */
+#define US_CTX_PAD         9   /* Dealer McDope's: '.' then 'c' */
+#define US_CTX_CHEST       10  /* 'O' (enhanced interface) or '.' then 'o' */
+#define US_CTX_FOUNTAIN    11  /* '.' (prompt: drink / wash) */
+#define US_CTX_ALTAR       12  /* '.' (prompt: pray / desecrate) */
+#define US_CTX_THRONE      13  /* '.' (prompt: pry / sit) */
+#define US_CTX_LAMP        14  /* brass lamp: '.' (prompt: rub / take) */
+
+/* ctx_flags */
+#define US_CTXF_ENHANCED   1   /* enhanced interface on ('o' + dir opens doors) */
+#define US_CTXF_BLOCKED    2   /* the game won't offer it now (monster adjacent, time stopped) */
+#define US_CTXF_TIMESTOP   4   /* time is stopped: nothing can be moved or looked at */
+
 typedef struct UlarnShared
 {
   int32_t magic;
@@ -85,6 +112,58 @@ typedef struct UlarnShared
   uint8_t msg_fmt[US_MSG_LINES][US_LINE_LEN];
   char    text_chr[US_TEXT_LINES][US_LINE_LEN + 1];
   uint8_t text_fmt[US_TEXT_LINES][US_LINE_LEN];
+
+  /* minimap / side panel */
+  /* mm_cat: what each map square shows, for the minimap. Written together
+   * with tiles[][] (so it only ever reflects what the player can see):
+   * low 5 bits = US_MM_* terrain/landmark class, US_MM_MONSTER = a monster
+   * is displayed there. */
+#define US_MM_UNKNOWN   0
+#define US_MM_FLOOR     1
+#define US_MM_WALL      2
+#define US_MM_DOOR      3
+#define US_MM_ITEM      4
+#define US_MM_GOLD      5
+#define US_MM_UP        6   /* stairs / elevator up */
+#define US_MM_DOWN      7   /* stairs / elevator down */
+#define US_MM_VOLCANO   8   /* volcanic shaft (down) / tube (up) */
+#define US_MM_ENTRANCE  9   /* dungeon entrance */
+#define US_MM_BUILDING  10  /* shops, bank, school, home, LRS... */
+#define US_MM_FOUNTAIN  11
+#define US_MM_ALTAR     12
+#define US_MM_THRONE    13
+#define US_MM_TRAP      14  /* known traps, pits, teleporters, spheres */
+#define US_MM_FEATURE   15  /* statue, mirror */
+#define US_MM_MONSTER   0x80
+  uint8_t mm_cat[US_MAP_H][US_MAP_W];
+  /* Inventory slot a..z as the game's inventory list describes it
+   * ("" = empty slot), e.g. "dagger +1 (weapon in hand)". */
+#define US_INV_SLOTS 26
+#define US_INV_LEN   80
+  char    inv_text[US_INV_SLOTS][US_INV_LEN];
+  /* context action / spells */
+  int32_t ctx_object;           /* item[playerx][playery]; hidden traps read as ONOTHING */
+  int32_t ctx_kind;             /* US_CTX_* */
+  int32_t ctx_flags;            /* US_CTXF_* */
+  int32_t ctx_doors;            /* bit i: known closed door in direction "hjklyubn"[i] */
+  char    ctx_name[US_CTX_NAME]; /* e.g. "a staircase going down" */
+  int32_t spell_count;          /* SPELL_COUNT */
+  uint8_t spell_known[US_SPELLS];        /* spelknow[] != 0 */
+  char    spell_codes[US_SPELLS][4];     /* spelcode[], e.g. "pro" */
+  /* danger cues / stats */
+  int32_t run_id;               /* random id of the current character, kept in
+                                   its save / checkpoint; 0 = no character yet */
+  int32_t kills;                /* monsters the player killed this run (also
+                                   kept in the save) */
+  int32_t end_state;            /* US_END_*: set when the final score shows */
+  int32_t end_score;
+  char    end_reason[US_LINE_LEN + 1];  /* e.g. "killed by a giant ant on 3" */
 } UlarnShared;
+
+/* end_state */
+#define US_END_NONE 0
+#define US_END_DIED 1
+#define US_END_WON  2
+#define US_END_QUIT 3
 
 #endif

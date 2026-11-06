@@ -53,6 +53,9 @@ class GameView(context: Context) : View(context) {
     var running = false
         set(v) { field = v; invalidate() }
 
+    /** Round minimap over the map; tap for the whole level. */
+    val minimap = MinimapOverlay(this)
+
     var arrowsAsMoves = true
     var tapToMove = true
     var swipeToMove = true
@@ -60,12 +63,38 @@ class GameView(context: Context) : View(context) {
     var flickToRun = false
     var haptics = true
 
+    // danger cues / stats
+    /** Low-HP cues (HP bar pulse, vignette, vibration, hit flash). */
+    val danger = DangerCues(this)
+    /** Called once per drawn frame with fresh state (run statistics). */
+    var onFrame: ((GameState) -> Unit)? = null
+
     /** Preferred tile size in dp (0 = automatic). */
     var tileDp = 0f
         set(v) { field = v; invalidate() }
 
     private val density = resources.displayMetrics.density
     private fun dp(v: Float) = v * density
+
+    /* saves / a11y */
+    /** Text size multiplier for the HUD, messages, text pages and answer buttons. */
+    var textScale = 1f
+        set(v) { field = v; invalidate() }
+    /** Opaque outlined panels, pure white text, underlines instead of colours. */
+    var highContrast = false
+        set(v) { field = v; chipsKey = ""; invalidate() }
+    /** A text size (or text-derived height) in dp, scaled by [textScale]. */
+    private fun sp(v: Float) = v * density * textScale
+    private fun isStandout(f: Int) = f == GameState.FMT_STANDOUT || f == GameState.FMT_STANDOUT2 || f == GameState.FMT_STANDOUT3
+
+    /** Outlines a rounded rect in high-contrast mode. */
+    private fun hcOutline(canvas: Canvas, l: Float, t: Float, r: Float, b: Float, radius: Float) {
+        if (!highContrast) return
+        val style = fill.style; val w = fill.strokeWidth
+        fill.style = Paint.Style.STROKE; fill.strokeWidth = dp(2f); fill.color = Color.WHITE
+        canvas.drawRoundRect(l, t, r, b, radius, radius, fill)
+        fill.style = style; fill.strokeWidth = w
+    }
 
     // ------------------------------------------------------------- tiles
 
@@ -111,18 +140,18 @@ class GameView(context: Context) : View(context) {
 
     // ------------------------------------------------------------ colors
 
-    private val bg = Color.rgb(12, 12, 14)
+    private val bg get() = if (highContrast) Color.BLACK else Color.rgb(12, 12, 14)
     private val mapBg = Color.BLACK            // same as the "unexplored" tile
-    private val fgNormal = Color.rgb(222, 222, 216)
-    private val fgDim = Color.rgb(150, 150, 150)
+    private val fgNormal get() = if (highContrast) Color.WHITE else Color.rgb(222, 222, 216)
+    private val fgDim get() = if (highContrast) Color.WHITE else Color.rgb(150, 150, 150)
     private val fgRed = Color.rgb(255, 110, 100)
     private val fgGreen = Color.rgb(110, 220, 120)
     private val fgBlue = Color.rgb(120, 170, 255)
     private val accent = Color.rgb(255, 190, 60)
-    private val panel = Color.rgb(22, 23, 27)
+    private val panel get() = if (highContrast) Color.BLACK else Color.rgb(22, 23, 27)
     private val panelLine = Color.rgb(44, 46, 54)
 
-    private fun fmtColor(f: Int) = when (f) {
+    private fun fmtColor(f: Int) = if (highContrast) Color.WHITE else when (f) {
         GameState.FMT_STANDOUT -> fgRed
         GameState.FMT_STANDOUT2 -> fgGreen
         GameState.FMT_STANDOUT3 -> fgBlue
@@ -165,6 +194,7 @@ class GameView(context: Context) : View(context) {
         canvas.drawColor(bg)
         content.set(reserveLeft, 0f, width - reserveRight, height - reserveBottom)
         if (content.width() < dp(120f) || content.height() < dp(120f)) content.set(0f, 0f, width.toFloat(), height.toFloat())
+        minimap.beginFrame()
 
         val s = state
         if (s == null || !s.refresh() || s.seq == 0) return
@@ -174,9 +204,11 @@ class GameView(context: Context) : View(context) {
             lastBeep = s.beepCount
         }
         if (s.displayMode != lastDisplayMode) { textPanX = 0f; lastDisplayMode = s.displayMode }
+        danger.onFrame(s, haptics)
+        onFrame?.invoke(s)
 
         buildChips(s)
-        val chipH = if (chips.isEmpty()) 0f else dp(44f)
+        val chipH = if (chips.isEmpty()) 0f else maxOf(dp(44f), sp(40f))
         val area = RectF(content.left, content.top, content.right, content.bottom - chipH)
 
         if (s.displayMode == GameState.DISPLAY_TEXT) drawTextPage(canvas, s, area)
@@ -219,7 +251,7 @@ class GameView(context: Context) : View(context) {
         mono.textSize = 100f
         val per100 = mono.measureText("M")
         var size = (area.width() - 2 * pad) / (usedCols * per100) * 100f
-        size = size.coerceIn(dp(11f), dp(20f))      // never smaller than readable
+        size = size.coerceIn(sp(11f), sp(20f))      // never smaller than readable
         mono.textSize = size
         var lineH = mono.fontSpacing
         if (lineH * rows > area.height() - 2 * pad) {   // but do fit vertically
@@ -267,8 +299,10 @@ class GameView(context: Context) : View(context) {
             if (c != ' ' && c.code != 0) {
                 val p = if (f == GameState.FMT_BOLD) monoBold else mono
                 p.color = if (f == GameState.FMT_INVERSE) bg else fmtColor(f)
+                p.isUnderlineText = highContrast && isStandout(f)
                 one[0] = c
                 canvas.drawText(one, 0, 1, cx, baseline, p)
+                p.isUnderlineText = false
             }
         }
     }
@@ -290,26 +324,28 @@ class GameView(context: Context) : View(context) {
 
         // --- HUD line 1: HP bar + numbers
         val hpFrac = if (s.hpMax > 0) (s.hp.toFloat() / s.hpMax).coerceIn(0f, 1f) else 0f
-        uiBold.textSize = dp(13f); ui.textSize = dp(12f)
+        uiBold.textSize = sp(13f); ui.textSize = sp(12f)
         val hpText = "HP ${s.hp}/${s.hpMax}"
         uiBold.color = Color.WHITE
-        val lineH = dp(20f)
+        val lineH = sp(20f)
         canvas.drawText(hpText, x0, y + lineH / 2 - (uiBold.descent() + uiBold.ascent()) / 2, uiBold)
         val barL = x0 + uiBold.measureText("HP 999/999") + dp(6f)
         val right1 = "Gold ${s.gold}"
-        ui.color = accent
+        ui.color = if (highContrast) Color.WHITE else accent
         val rw = ui.measureText(right1)
         canvas.drawText(right1, x1 - rw, y + lineH / 2 - (ui.descent() + ui.ascent()) / 2, ui)
         val barR = x1 - rw - dp(10f)
         if (barR > barL + dp(30f)) {
             fill.color = panelLine
             canvas.drawRoundRect(barL, y + lineH / 2 - dp(4f), barR, y + lineH / 2 + dp(4f), dp(4f), dp(4f), fill)
-            fill.color = when {
+            fill.color = danger.hpBarColor(when {
+                highContrast -> Color.WHITE
                 hpFrac > 0.6f -> Color.rgb(90, 200, 110)
                 hpFrac > 0.3f -> Color.rgb(240, 190, 60)
                 else -> Color.rgb(235, 80, 70)
-            }
+            })
             canvas.drawRoundRect(barL, y + lineH / 2 - dp(4f), barL + (barR - barL) * hpFrac, y + lineH / 2 + dp(4f), dp(4f), dp(4f), fill)
+            hcOutline(canvas, barL, y + lineH / 2 - dp(5f), barR, y + lineH / 2 + dp(5f), dp(5f))
         }
         y += lineH
 
@@ -330,15 +366,16 @@ class GameView(context: Context) : View(context) {
         // --- effects
         val active = GameState.EFFECT_NAMES.filterIndexed { i, _ -> s.effects and (1 shl i) != 0 }
         if (active.isNotEmpty()) {
-            ui.textSize = dp(11f)
+            ui.textSize = sp(11f)
             var cx = x0
-            val h = dp(18f)
+            val h = sp(18f)
             for (name in active) {
                 val cw = ui.measureText(name) + dp(12f)
                 if (cx + cw > x1) break
-                fill.color = Color.argb(200, 60, 50, 20)
+                fill.color = if (highContrast) Color.BLACK else Color.argb(200, 60, 50, 20)
                 canvas.drawRoundRect(cx, y + dp(1f), cx + cw, y + dp(1f) + h, h / 2, h / 2, fill)
-                ui.color = accent
+                hcOutline(canvas, cx, y + dp(1f), cx + cw, y + dp(1f) + h, h / 2)
+                ui.color = if (highContrast) Color.WHITE else accent
                 canvas.drawText(name, cx + dp(6f), y + dp(1f) + h / 2 - (ui.descent() + ui.ascent()) / 2, ui)
                 cx += cw + dp(4f)
             }
@@ -347,17 +384,19 @@ class GameView(context: Context) : View(context) {
         y += dp(2f)
 
         // --- messages: the game's 5x80 message lines, reflowed
-        val msgLineH = dp(17f)
+        val msgLineH = sp(17f)
         val msgPad = dp(6f)
         val msgLines = 4
         val msgTop = area.bottom - pad - msgLines * msgLineH - 2 * msgPad
         fill.color = panel
         canvas.drawRoundRect(area.left + dp(4f), msgTop, area.right - dp(4f), area.bottom - pad + dp(2f), dp(8f), dp(8f), fill)
+        hcOutline(canvas, area.left + dp(4f), msgTop, area.right - dp(4f), area.bottom - pad + dp(2f), dp(8f))
         drawMessages(canvas, s, x0, msgTop + msgPad, w, msgLineH, msgLines)
 
         // --- map between HUD and messages
         mapRect.set(area.left, y, area.right, msgTop - dp(6f))
         drawMap(canvas, s)
+        danger.drawMapOverlay(canvas, mapRect)
     }
 
     private fun drawFitted(canvas: Canvas, text: String, x: Float, top: Float, w: Float, h: Float, p: Paint) {
@@ -369,7 +408,7 @@ class GameView(context: Context) : View(context) {
     }
 
     private fun drawMessages(canvas: Canvas, s: GameState, x: Float, top: Float, w: Float, lineH: Float, maxLines: Int) {
-        ui.textSize = dp(13f)
+        ui.textSize = sp(13f)
         ui.color = fgNormal
         val caretRow = s.cursorY - 1
         val caretCol = s.cursorX - 1
@@ -404,7 +443,9 @@ class GameView(context: Context) : View(context) {
         for (seg in shown) {
             ui.color = fmtColor(seg.fmt)
             val base = yy + lineH / 2 - (ui.descent() + ui.ascent()) / 2
+            ui.isUnderlineText = highContrast && isStandout(seg.fmt)
             canvas.drawText(seg.text, x, base, ui)
+            ui.isUnderlineText = false
             if (seg.caretAt >= 0 && caretOn) {
                 val cx = x + ui.measureText(seg.text, 0, minOf(seg.caretAt, seg.text.length))
                 fill.color = accent
@@ -465,6 +506,7 @@ class GameView(context: Context) : View(context) {
             }
         }
         canvas.restore()
+        minimap.draw(canvas, s, mapRect, originX + (s.playerX + 0.5f) * t, originY + (s.playerY + 0.5f) * t, t)
     }
 
     private fun drawTile(canvas: Canvas, id: Int) {
@@ -519,15 +561,15 @@ class GameView(context: Context) : View(context) {
         for (chip in chips) {
             chip.rect.set(x, bar.top + gap, x + w, bar.bottom - gap)
             val enabled = chip.keys != null || chip.action != null
-            fill.color = if (enabled) Color.argb(235, 52, 54, 64) else Color.argb(0, 0, 0, 0)
+            fill.color = if (enabled) (if (highContrast) Color.BLACK else Color.argb(235, 52, 54, 64)) else Color.argb(0, 0, 0, 0)
             canvas.drawRoundRect(chip.rect, dp(10f), dp(10f), fill)
             if (enabled) {
-                fill.style = Paint.Style.STROKE; fill.strokeWidth = dp(1f); fill.color = Color.argb(80, 255, 255, 255)
+                fill.style = Paint.Style.STROKE; fill.strokeWidth = dp(if (highContrast) 2f else 1f); fill.color = if (highContrast) Color.WHITE else Color.argb(80, 255, 255, 255)
                 canvas.drawRoundRect(chip.rect, dp(10f), dp(10f), fill)
                 fill.style = Paint.Style.FILL
             }
-            uiBold.color = if (enabled) Color.WHITE else Color.argb(170, 255, 255, 255)
-            var size = dp(14f)
+            uiBold.color = if (enabled || highContrast) Color.WHITE else Color.argb(170, 255, 255, 255)
+            var size = sp(14f)
             uiBold.textSize = size
             val tw = uiBold.measureText(chip.label)
             if (tw > w - dp(8f)) { size *= (w - dp(8f)) / tw; uiBold.textSize = size }
@@ -736,6 +778,7 @@ class GameView(context: Context) : View(context) {
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (minimap.onTouch(event)) return true
         scaleDetector.onTouchEvent(event)
         if (event.actionMasked == MotionEvent.ACTION_DOWN) pinching = false
         if (event.pointerCount > 1) pinching = true

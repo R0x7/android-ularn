@@ -64,10 +64,51 @@ class Settings(context: Context) {
         get() = p.getBoolean("arrows", true)
         set(v) = p.edit().putBoolean("arrows", v).apply()
 
+    /** Round minimap in a corner of the map (tap it for the whole level). */
+    var showMinimap: Boolean
+        get() = p.getBoolean("minimap", true)
+        set(v) = p.edit().putBoolean("minimap", v).apply()
+
+    /** Wide windows (tablets, foldables): stats / map / inventory panel beside the map. */
+    var sidePanel: Boolean
+        get() = p.getBoolean("sidePanel", true)
+        set(v) = p.edit().putBoolean("sidePanel", v).apply()
+
     /** Map zoom, as tile size in dp; 0 = automatic. */
     var tileDp: Float
         get() = p.getFloat("tileDp", 0f)
         set(v) = p.edit().putFloat("tileDp", v).apply()
+
+    // danger cues / stats
+    /** Low-HP cues start below this percentage of max HP. */
+    var dangerThresholdPct: Int
+        get() = p.getInt("dangerPct", 25)
+        set(v) = p.edit().putInt("dangerPct", v).apply()
+
+    /** Low HP: the HP bar pulses red. */
+    var dangerPulse: Boolean
+        get() = p.getBoolean("dangerPulse", true)
+        set(v) = p.edit().putBoolean("dangerPulse", v).apply()
+
+    /** Low HP: a red vignette around the map. */
+    var dangerVignette: Boolean
+        get() = p.getBoolean("dangerVignette", true)
+        set(v) = p.edit().putBoolean("dangerVignette", v).apply()
+
+    /** Vibrate once when HP falls below the threshold. */
+    var dangerVibrate: Boolean
+        get() = p.getBoolean("dangerVibrate", true)
+        set(v) = p.edit().putBoolean("dangerVibrate", v).apply()
+
+    /** Red flash (and a short buzz) when one hit takes 20% of max HP or more. */
+    var bigHitCue: Boolean
+        get() = p.getBoolean("bigHitCue", true)
+        set(v) = p.edit().putBoolean("bigHitCue", v).apply()
+
+    /** Show a toast when an achievement unlocks. */
+    var achievementToasts: Boolean
+        get() = p.getBoolean("achToasts", true)
+        set(v) = p.edit().putBoolean("achToasts", v).apply()
 
     companion object {
         /** Rotation choices: label to ActivityInfo.screenOrientation. */
@@ -82,7 +123,7 @@ class Settings(context: Context) {
     }
 
     /** Builds Ularn 1.6.3a's ularn.opt: "OPTION name:X,gender:male,...". */
-    fun buildOptsFile(): String {
+    fun buildOptsFile(playerName: String = this.playerName, female: Boolean = this.female): String {
         // ',' and ':' separate options in ularn.opt.
         val name = playerName.replace(Regex("[,:\\r\\n]"), " ").trim().take(30).ifBlank { "Adventurer" }
         val opts = mutableListOf("name:$name", "gender:" + if (female) "female" else "male")

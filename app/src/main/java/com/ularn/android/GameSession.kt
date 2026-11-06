@@ -38,9 +38,21 @@ class GameSession(
 
     val workDir: File get() = File(context.filesDir, "ularn163")
 
+    /* saves / a11y */
+    /**
+     * The game's $HOME, where it keeps its save, checkpoint and ularn.opt: a
+     * save slot's folder (see saves/SaveSlots), or [workDir] if null. Set it
+     * before [start]. The working directory stays [workDir], so the data
+     * files and the scoreboard are shared.
+     */
+    var homeDir: File? = null
+    /** ularn.opt contents for the next [start]; null = from Settings. */
+    var optsText: String? = null
+    private val home: File get() = homeDir ?: workDir
+
     /** Ularn names save files after the login name, which we fix as "player". */
-    val saveFile get() = File(workDir, "ularn_$LOGIN.sav")
-    val checkpointFile get() = File(workDir, "ularn_$LOGIN.ckp")
+    val saveFile get() = File(home, "ularn_$LOGIN.sav")
+    val checkpointFile get() = File(home, "ularn_$LOGIN.ckp")
 
     fun hasSave() = saveFile.exists()
     fun hasCheckpoint() = checkpointFile.exists()
@@ -54,7 +66,8 @@ class GameSession(
                 File(dir, name).outputStream().use { input.copyTo(it) }
             }
         }
-        File(dir, "ularn.opt").writeText(settings.buildOptsFile())
+        home.mkdirs()
+        File(home, "ularn.opt").writeText(optsText ?: settings.buildOptsFile())
     }
 
     fun start(settings: Settings, args: List<String> = emptyList()): Boolean {
@@ -62,7 +75,7 @@ class GameSession(
         state ?: return false
         prepare(settings)
         val dir = workDir.absolutePath
-        val env = arrayOf("HOME=$dir", "USER=$LOGIN", "LOGNAME=$LOGIN")
+        val env = arrayOf("HOME=${home.absolutePath}", "USER=$LOGIN", "LOGNAME=$LOGIN")
         val r = NativeBridge.spawn(dir, (listOf("ularn") + args).toTypedArray(), env)
         if (r[0] != 0) {
             Log.e(TAG, "spawn failed: errno ${-r[0]}")
