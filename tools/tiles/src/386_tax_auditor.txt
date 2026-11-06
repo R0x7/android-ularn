@@ -1,0 +1,37 @@
+# 386_tax_auditor (Wild Edition, LarnCoin feature): grey suit, glasses, clipboard
+# k=#426b6b s=#2f4c4c b=#000000 g=#7a7a84 G=#4e4e56 L=#a2a2ac w=#e8e8e0
+# r=#b02828 R=#7c1a1a f=#e0b08c F=#b07c5c h=#3c2a1c H=#5c4430 e=#4c6c8c
+# W=#c8e0f0 y=#e8c040 Y=#f8f0d0 d=#202024 D=#5c5c64 c=#7c5428 C=#a87838
+# p=#ecead8 q=#bcbaa8 P=#6c6c78 m=#c0c0c8 M=#8a8a94
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkbbbbbbkkkkkkkkkkkkk
+kkkkkkkkkkkkbhHhHhhbkkkkkkkkkkkk
+kkkkkkkkkkkbhhhHhHhhbkkkkkkkkkkk
+kkkkkkkkkkkbhhhhhhhhbkkkkkkkkkkk
+kkkkkkkkkkkbhffffffhbkkkkkkkkkkk
+kkkkkkkkkkkbfffffffFbkkkkkkkkkkk
+kkkkkkkkkkbFbWebbWebFbkkkkkkkkkk
+kkkkkkkkkkkbffffFffFbkkkkkkkkkkk
+kkkkkkkkkkkbfffbbbfFbkkkkkkkkkkk
+kkkkkkkkkkkbfFFFFFFFbkkkkkkkkkkk
+kkkkkkkkkbbbbbFFFFbbbbbkkkkkkkkk
+kkkkkkkbbgggLwwwwwwGgggbkkkkkkkk
+kkkkkkbgggLgLwwrrwwGgGGbkkkkkkkk
+kkkkkkbLgGLggLwrrwGgbbbkkkkkkkkk
+kkkkkkbLgGLggLwrrbbbmmmbbbkkkkkk
+kkkkkkbLgGLggggrrbCcmMmccbkkkkkk
+kkkkkkbLgGLggggrrbCpppppqbkkkkkk
+kkkkkbYLgGLggggRRbCpPPPPqbkkkkkk
+kkkkkbyLgGLggggRgbCpppppffbkkkkk
+kkkkkbyLgGLgggggbbCpPPPPfFbkkkkk
+kkkkkbyLgGLggggggbCpppppqbkkkkkk
+kkkkkbyffGLgggggbbCpPPPpqbkkkkkk
+kkkkkbyfFGGGGGGGGbCpppppqbkkkkkk
+kkkkkbdbbbbbGgGbbbCCCCCCCbkkkkkk
+kkkkkkbkkkkbGgGbkbbbbbbbbbkkkkkk
+kkkkkkkkkkkbGgGbbGgGbkkkkkkkkkkk
+kkkkkkkkkkkbGgGbbGgGbkkkkkkkkkkk
+kkkkkkkkkkbdDddbbdDddbkkkkkkkkkk
+kkkkkkkkkssssssssssssssskkkkkkkk
+kkkkkkkkkkkssssssssssskkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk

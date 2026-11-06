@@ -66,6 +66,7 @@
 #define US_CTX_THRONE      13  /* '.' (prompt: pry / sit) */
 #define US_CTX_LAMP        14  /* brass lamp: '.' (prompt: rub / take) */
 #define US_CTX_VENDING     15  /* Wild Edition vending machine: '.' (prompt: buy / kick) */
+#define US_CTX_COINATM     16  /* Wild Edition LarnCoin ATM: '.' (prompt: buy / sell) */
 
 /* ctx_flags */
 #define US_CTXF_ENHANCED   1   /* enhanced interface on ('o' + dir opens doors) */
@@ -167,7 +168,7 @@ typedef struct UlarnShared
   int32_t hat_tile;             /* overlay tile drawn on the player, 0 = none */
   int32_t glitch;               /* turns of glitch left (0 = reality is fine) */
   int32_t weather;              /* hour (0-23) | weather state << 8 */
-  int32_t coin_price;           /* LarnCoin price in gold */
+  int32_t coin_price;           /* LarnCoin price in gold; < 0: ticker hidden (wild_coin.c) */
   int32_t pet_x, pet_y;         /* the pet's cell, -1 = none on this level */
   int32_t kill_counts[US_KILL_COUNTS];
   /* Event ring: ev[seq & (US_EVENTS-1)] = {type, a, b, c}; the app keeps the

@@ -185,6 +185,10 @@ class GameView(context: Context) : View(context) {
     private var textPanMax = 0f
     private var lastDisplayMode = -1
 
+    // Wild Edition LarnCoin ticker: the last price seen and which way it went.
+    private var coinLast = 0
+    private var coinTrend = 0
+
     override fun onAttachedToWindow() { super.onAttachedToWindow(); postDelayed(blink, 530) }
     override fun onDetachedFromWindow() { removeCallbacks(blink); endSwipe(); super.onDetachedFromWindow() }
 
@@ -353,7 +357,21 @@ class GameView(context: Context) : View(context) {
         ui.color = fgNormal
         val where = if (s.levelName == "H") "Home" else "Level ${s.levelName}"
         val line2 = "Lv ${s.playerLevel} ${s.levelTitle}  ·  Exp ${s.exp}  ·  $where"
-        drawFitted(canvas, line2, x0, y, w, lineH, ui)
+        val ticker = coinTicker(s)
+        var w2 = w
+        if (ticker != null) {
+            val tw = ui.measureText(ticker)
+            ui.color = when {
+                highContrast -> Color.WHITE
+                coinTrend > 0 -> fgGreen
+                coinTrend < 0 -> fgRed
+                else -> accent
+            }
+            canvas.drawText(ticker, x1 - tw, y + lineH / 2 - (ui.descent() + ui.ascent()) / 2, ui)
+            ui.color = fgNormal
+            w2 = w - tw - dp(8f)
+        }
+        drawFitted(canvas, line2, x0, y, w2, lineH, ui)
         y += lineH
 
         // --- HUD line 3: stats
@@ -397,6 +415,19 @@ class GameView(context: Context) : View(context) {
         mapRect.set(area.left, y, area.right, msgTop - dp(6f))
         drawMap(canvas, s)
         danger.drawMapOverlay(canvas, mapRect)
+    }
+
+    /** Wild Edition: "Ⓛ 123 ▲", or null while hidden. The C side (wild_coin.c)
+     *  sends the price negated while the ticker should stay hidden (no coins
+     *  held, no move this turn) and 0 when LarnCoin is off. */
+    private fun coinTicker(s: GameState): String? {
+        val raw = s.coinPrice
+        if (raw == 0) return null
+        val p = if (raw < 0) -raw else raw
+        if (coinLast != 0 && p != coinLast) coinTrend = if (p > coinLast) 1 else -1
+        coinLast = p
+        if (raw < 0) return null
+        return "Ⓛ $p" + when (coinTrend) { 1 -> " ▲"; -1 -> " ▼"; else -> "" }
     }
 
     private fun drawFitted(canvas: Canvas, text: String, x: Float, top: Float, w: Float, h: Float, p: Paint) {

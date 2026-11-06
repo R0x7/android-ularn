@@ -57,6 +57,7 @@ static int object_class(int obj)
 
     case OSCHOOL: case ODNDSTORE: case OBANK2: case OBANK: case OHOME:
     case OTRADEPOST: case OLRS: case OPAD:
+    case OCOINATM:   /* Wild Edition: LarnCoin ATM */
       return US_MM_BUILDING;
 
     case OFOUNTAIN:

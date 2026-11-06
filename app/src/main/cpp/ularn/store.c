@@ -44,6 +44,7 @@
 #include "show.h"
 #include "itm.h"
 #include "wild_hats.h"
+#include "wild_coin.h"
 
 /* =============================================================================
  *
@@ -1042,6 +1043,7 @@ static void obanksub(void)
   {
     ClearToEOPage(1, 20);
     MoveCursor(1, 20);
+    wild_coin_bank_line();   /* Wild Edition: LarnCoin (prints nothing when off) */
     Print("\nYour wish? [(");
     Standout("d");
     Print(") deposit, (");
@@ -1053,7 +1055,9 @@ static void obanksub(void)
     Print("]  ");
     yrepcount=0;
 
-    i = get_prompt_input("", "dws\033", 1);
+    i = get_prompt_input("", wild_coin_bank_keys("dws\033"), 1);   /* Wild Edition: + "bc" */
+
+    if (wild_coin_bank_key(i)) i = 0;   /* Wild Edition: LarnCoin (b)uy / (c)ash out */
 
     switch(i)
     {

@@ -1,0 +1,35 @@
+# 388_coin_atm (Wild Edition, LarnCoin feature)
+# k=#426b6b s=#2f4c4c b=#000000 n=#6c7480 N=#9aa2ac M=#464c56 w=#d8d8d8
+# Y=#f8d860 y=#d0a020 o=#7c5410 g=#123a1c G=#40d060 h=#2a6a3a r=#d04040
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkbbbbbbbbbbbbbbbbbbbkkkkkkk
+kkkkkkbYYYYYYYoooYYYYYYYbkkkkkkk
+kkkkkkbYYYYYYooyyoYYYYYYbkkkkkkk
+kkkkkkbYYYYYYoooyoYYYYYYbskkkkkk
+kkkkkkbyyyyyyyoooyyyyyyybskkkkkk
+kkkkkkbbbbbbbbbbbbbbbbbbbskkkkkk
+kkkkkkbNnnnnnnnnnnnnnnnMbskkkkkk
+kkkkkkbNnbbbbbbbbbbbbbnMbskkkkkk
+kkkkkkbNnbhggggggggGGbnMbskkkkkk
+kkkkkkbNnbgggggggGGggbnMbskkkkkk
+kkkkkkbNnbhgggGggggggbnMbskkkkkk
+kkkkkkbNnbggGGgGGggggbnMbskkkkkk
+kkkkkkbNnbGGgggggggggbnMbskkkkkk
+kkkkkkbNnbbbbbbbbbbbbbnMbskkkkkk
+kkkkkkbNnnnnnnnnnnnnnnnMbskkkkkk
+kkkkkkbNnnwnwnwnrnbbbbnMbskkkkkk
+kkkkkkbNnnnnnnnnnnNNNNnMbskkkkkk
+kkkkkkbNnnwnwnwnynnnnnnMbskkkkkk
+kkkkkkbNnnnnnnnnnnnnnnnMbskkkkkk
+kkkkkkbNnnwnwnwnGnnnnnnMbskkkkkk
+kkkkkkbNnnnnnnnnnnnnnnnMbskkkkkk
+kkkkkkbNnnnMMMMMMMMMnnnMbskkkkkk
+kkkkkkbNnnbbbGGGGGbbbnnMbskkkkkk
+kkkkkkbNnnnnngggggnnnnnMbskkkkkk
+kkkkkkbNnnnnnnnnnnnnnnnMbskkkkkk
+kkkkkkbbbbbbbbbbbbbbbbbbbskkkkkk
+kkkkkkksssssssssssssssssssskkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk

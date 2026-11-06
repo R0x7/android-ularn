@@ -104,6 +104,7 @@ class ContextAction(
             CTX_THRONE -> return look("Throne")
             CTX_LAMP -> return look("Lamp")
             CTX_VENDING -> return look("Vending")                            // Wild Edition: buy / kick
+            CTX_COINATM -> return look("ATM")                                // Wild Edition: buy / sell LarnCoin
         }
 
         // Nothing to do underfoot: a closed door next to us?
@@ -148,6 +149,7 @@ class ContextAction(
         const val CTX_THRONE = 13
         const val CTX_LAMP = 14
         const val CTX_VENDING = 15
+        const val CTX_COINATM = 16
 
         const val CTXF_ENHANCED = 1
         const val CTXF_BLOCKED = 2

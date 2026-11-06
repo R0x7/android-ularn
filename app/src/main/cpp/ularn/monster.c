@@ -51,6 +51,7 @@
 #include "player.h"
 #include "monster.h"
 #include "wild.h"
+#include "wild_coin.h"
 #include "dungeon.h"
 #include "sphere.h"
 #include "show.h"
@@ -163,7 +164,7 @@ struct monst monster[MONST_COUNT] = {
 /* Wild Edition (compat/wild_*.c tune and spawn these; see docs/WILD_EDITION_PLAN.md) */
 { "null pointer",         8,    2,   7,  0,   3,  200,    60,     400, FL_FLY|FL_INFRAVIS},
 { "fountain kraken",      7,    4,   6,  0,   3,  300,    70,     300, FL_NOBEHEAD},
-{ "tax auditor",          6,    6,   0,  0,  12,    0,    40,      50, FL_HEAD},
+{ "tax auditor",          6,    6,   0, 17,  12,    0,    40,      50, FL_HEAD},
 { "roomba",               2,    8,   1,  0,   3,    0,    25,      30, FL_SLOW|FL_NOBEHEAD},
 { "type I demon lord",   12,  -40,  20,  3,  20,    0,   150,   50000, FL_HEAD|FL_NOBEHEAD|FL_FLY|FL_INFRAVIS},
 { "type II demon lord",  13,  -45,  25,  5,  22,    0,   200,   75000, FL_HEAD|FL_NOBEHEAD|FL_FLY|FL_INFRAVIS},
@@ -415,6 +416,7 @@ static char *rust_armour(void)
  * 14 nymph       steal objects
  * 15 bugbear     bite
  * 16 osequip
+ * 17 tax auditor   garnish gold (Wild Edition, compat/wild_coin.c)
  *
  * PARAMETERS:
  *
@@ -700,6 +702,16 @@ static int spattack(int x, int xx, int yy)
       p = "\nThe %s bit you!";
       need_beep = 1;
       checkloss(i);
+      break;
+
+    case 17:
+      /* Wild Edition: the tax auditor garnishes gold (compat/wild_coin.c) */
+      if (wild_on(WILDF_COIN))
+      {
+        p = wild_coin_garnish();
+        need_beep = 1;
+        need_show = 1;   /* paperwork, not violence: no blow follows */
+      }
       break;
   }
 

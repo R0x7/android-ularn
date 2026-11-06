@@ -40,6 +40,7 @@
 #include "show.h"
 #include "scores.h"
 #include "wild.h"
+#include "wild_coin.h"
 
 /* =============================================================================
  * Local variables
@@ -191,6 +192,8 @@ static long calc_score(int Winner)
   {
     gold_value += item_value(iven[idx], ivenarg[idx]);
   }
+
+  gold_value += wild_coin_value();   /* Wild Edition: LarnCoin at today's price (0 when off) */
 
   if (!Winner)
   {

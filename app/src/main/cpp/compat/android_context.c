@@ -98,6 +98,8 @@ static int context_kind(int obj)
     case OBRASSLAMP:    return US_CTX_LAMP;
     case OVENDING:      /* Wild Edition: buy / kick, or a plain item with the feature off */
       return wild_on(WILDF_VENDING) ? US_CTX_VENDING : US_CTX_TAKE;
+    case OCOINATM:      /* Wild Edition: buy / sell LarnCoin */
+      return wild_on(WILDF_COIN) ? US_CTX_COINATM : US_CTX_TAKE;
 
     default:
       /* potions, scrolls, books, cookies, drugs and finditem() items:
