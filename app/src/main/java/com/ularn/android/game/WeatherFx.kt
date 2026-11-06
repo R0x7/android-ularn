@@ -177,7 +177,9 @@ object WeatherMath {
     fun stateOf(packed: Int) = (packed ushr 8) and 0xff
 
     /** The hour the game computes from its clock (gtime). */
-    fun hourAt(gameTime: Long) = ((gameTime / TURNS_PER_HOUR) % 24).toInt()
+    /** Mirrors hour_now() in wild_weather.c: a new game starts at 08:00. */
+    fun hourAt(gameTime: Long) = ((gameTime / TURNS_PER_HOUR + DAY_START_HOUR) % 24).toInt()
+    const val DAY_START_HOUR = 8
 
     fun isNight(hour: Int) = hour >= NIGHT_START || hour < NIGHT_END
 

@@ -9,7 +9,8 @@
  * State (all saved with the game):
  *   c[WILD_WEATHER]            hour (0-23) | weather state << 8, as the app
  *                              reads it from S->weather. The hour is always
- *                              (gtime / 50) % 24, so a day is 1200 turns.
+ *                              (gtime / 50 + 8) % 24, so a day is 1200 turns
+ *                              and a new game starts at 08:00.
  *   wild_extra[WX_WEATHER_NEXT] gtime of the next change of weather.
  *
  * On the surface (level 0):
@@ -57,9 +58,12 @@ extern UlarnShared *ularn_shared;
 #define LIGHTNING_DMG    20
 #define LIGHTNING_RANGE   7   /* "visible": this close to the player */
 
+/* A new game starts at 08:00, so the first night is a few hundred turns away. */
+#define DAY_START_HOUR 8
+
 static int hour_now(void)
 {
-  return (int) ((gtime / TURNS_PER_HOUR) % 24);
+  return (int) ((gtime / TURNS_PER_HOUR + DAY_START_HOUR) % 24);
 }
 
 static int state_now(void)

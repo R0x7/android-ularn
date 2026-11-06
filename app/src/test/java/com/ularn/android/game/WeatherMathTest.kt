@@ -20,12 +20,12 @@ class WeatherMathTest {
     }
 
     @Test fun hourFollowsTheGameClock() {
-        assertEquals(0, WeatherMath.hourAt(0))
-        assertEquals(0, WeatherMath.hourAt(49))
-        assertEquals(1, WeatherMath.hourAt(50))
-        assertEquals(23, WeatherMath.hourAt(1199))
-        assertEquals(0, WeatherMath.hourAt(1200))       // a day is 1200 turns
-        assertEquals(6, WeatherMath.hourAt(1200 + 300))
+        assertEquals(8, WeatherMath.hourAt(0))          // a new game starts at 08:00
+        assertEquals(8, WeatherMath.hourAt(49))
+        assertEquals(9, WeatherMath.hourAt(50))
+        assertEquals(7, WeatherMath.hourAt(1199))
+        assertEquals(8, WeatherMath.hourAt(1200))       // a day is 1200 turns
+        assertEquals(14, WeatherMath.hourAt(1200 + 300))
     }
 
     @Test fun nightIsNinePmToSixAm() {
