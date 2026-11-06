@@ -103,6 +103,7 @@ class ContextAction(
             CTX_ALTAR -> return look("Altar")
             CTX_THRONE -> return look("Throne")
             CTX_LAMP -> return look("Lamp")
+            CTX_VENDING -> return look("Vending")                            // Wild Edition: buy / kick
         }
 
         // Nothing to do underfoot: a closed door next to us?
@@ -146,6 +147,7 @@ class ContextAction(
         const val CTX_ALTAR = 12
         const val CTX_THRONE = 13
         const val CTX_LAMP = 14
+        const val CTX_VENDING = 15
 
         const val CTXF_ENHANCED = 1
         const val CTXF_BLOCKED = 2

@@ -27,6 +27,7 @@
 #include "spell.h"
 
 #include "../shared_state.h"
+#include "wild.h"
 
 extern UlarnShared *ularn_shared;
 
@@ -95,6 +96,8 @@ static int context_kind(int obj)
     case OTHRONE2:
     case ODEADTHRONE:   return US_CTX_THRONE;
     case OBRASSLAMP:    return US_CTX_LAMP;
+    case OVENDING:      /* Wild Edition: buy / kick, or a plain item with the feature off */
+      return wild_on(WILDF_VENDING) ? US_CTX_VENDING : US_CTX_TAKE;
 
     default:
       /* potions, scrolls, books, cookies, drugs and finditem() items:

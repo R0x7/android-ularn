@@ -1,0 +1,36 @@
+# 368_vending_machine (Wild Edition, vending feature)
+# k=#426b6b s=#2f4c4c b=#000000 r=#7c1a1a R=#b02828 L=#e05a4a
+# g=#1e2e3c G=#5a7a8c w=#9a9a9a y=#e8c040 n=#40d060 o=#e07020
+# c=#3cb0c8 p=#c84090
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkbbbbbbbbbbbbbbbbbbkkkkkkk
+kkkkkkbLLLLLLLLLLLLLLLLLLbkkkkkk
+kkkkkkbLLLLLLLLLLLLLLLLLLbkkkkkk
+kkkkkkbrrRRRRRRRRRRRRRRrrbskkkkk
+kkkkkkbrrRGggggggggRwwwrrbskkkkk
+kkkkkkbrrRGygogygogRwywrrbskkkkk
+kkkkkkbrrRGygogygogRwwwrrbskkkkk
+kkkkkkbrrRGwwwwwwwwRwnwrrbskkkkk
+kkkkkkbrrRGggggggggRwwwrrbskkkkk
+kkkkkkbrrRGggggggggRwywrrbskkkkk
+kkkkkkbrrRGcgpgcgpgRwwwrrbskkkkk
+kkkkkkbrrRGcgpgcgpgRwywrrbskkkkk
+kkkkkkbrrRGwwwwwwwwRwwwrrbskkkkk
+kkkkkkbrrRGggggggggRwwwrrbskkkkk
+kkkkkkbrrRGggggggggRwbwrrbskkkkk
+kkkkkkbrrRGogygcgogRwbwrrbskkkkk
+kkkkkkbrrRGogygcgogRwbwrrbskkkkk
+kkkkkkbrrRGwwwwwwwwRwwwrrbskkkkk
+kkkkkkbrrRGggggggggRwnwrrbskkkkk
+kkkkkkbrrRGggggggggRwwwrrbskkkkk
+kkkkkkbrrRRRRRRRRRRRRRRrrbskkkkk
+kkkkkkbrrRrrrrrrrrrrrrRrrbskkkkk
+kkkkkkbrrRbbbbbbbbbbbbRrrbskkkkk
+kkkkkkbrrRbbbbbbbbbbbbRrrbskkkkk
+kkkkkkbrrRbbbbbbbbbbbbRrrbskkkkk
+kkkkkkbrrRRRRRRRRRRRRRRrrbskkkkk
+kkkkkkbrrrrrrrrrrrrrrrrrrbskkkkk
+kkkkkkbrrrrrrrrrrrrrrrrrrbskkkkk
+kkkkkkkbbbbbbbbbbbbbbbbbbkskkkkk
+kkkkkkssssssssssssssssssssskkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk

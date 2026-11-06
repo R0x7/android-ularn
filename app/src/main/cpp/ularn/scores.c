@@ -136,7 +136,9 @@ static char *whydead[DIED_COUNT] =
   "died a post mortem death",
   "wasted by a malloc() failure",
   "wasted by an annoyed genie",
-  "took an elevator straight to HELL"
+  "took an elevator straight to HELL",
+  "quit",                          /* DIED_QUICK_QUIT: never shown */
+  "crushed by a vending machine"   /* Wild Edition */
 };
 
 /*
