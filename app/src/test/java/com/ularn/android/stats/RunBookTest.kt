@@ -80,18 +80,31 @@ class RunBookTest {
         assertEquals(1, b.lifetime.gamesPlayed)
     }
 
-    @Test fun newCharacterAbandonsPreviousRun() {
+    @Test fun switchingGamesParksTheOtherRun() {
         val b = RunBook()
-        b.observe(obs(runId = 1), 1)
+        b.observe(obs(runId = 1, kills = 3), 1)
         b.observe(obs(runId = 2), 2)
         assertEquals(2, b.lifetime.gamesPlayed)
+        assertEquals(0, b.lifetime.quits)
+        assertEquals(2, b.current!!.id)
+        // back to the first slot: same run, not a new game
+        b.observe(obs(runId = 1, kills = 4), 3)
+        assertEquals(1, b.current!!.id)
+        assertEquals(4, b.current!!.kills)
+        assertEquals(2, b.lifetime.gamesPlayed)
+        assertTrue(2 in b.parked)
+    }
+
+    @Test fun tooManyUnfinishedRunsAbandonsTheOldest() {
+        val b = RunBook()
+        for (id in 1..RunBook.MAX_PARKED + 2) b.observe(obs(runId = id), id.toLong())
+        assertEquals(RunBook.MAX_PARKED, b.parked.size)
         assertEquals(1, b.lifetime.quits)
         assertEquals("abandoned", b.recent[0].cause)
-        assertEquals(2, b.current!!.id)
+        assertEquals(1, b.recent[0].id)
         // a finished run never restarts
-        b.observe(obs(runId = 1), 3)
-        assertEquals(2, b.current!!.id)
-        assertEquals(2, b.lifetime.gamesPlayed)
+        b.observe(obs(runId = 1), 99)
+        assertEquals(RunBook.MAX_PARKED + 2, b.current!!.id)
     }
 
     @Test fun achievementsUnlockOnce() {

@@ -14,6 +14,9 @@ class StatsStore(private val file: File) {
         try {
             val o = JSONObject(file.readText())
             o.optJSONObject("current")?.let { book.current = runFrom(it) }
+            o.optJSONArray("parked")?.let { a ->
+                for (i in 0 until a.length()) runFrom(a.getJSONObject(i)).let { book.parked[it.id] = it }
+            }
             o.optJSONArray("recent")?.let { a -> for (i in 0 until a.length()) book.recent += runFrom(a.getJSONObject(i)) }
             o.optJSONObject("lifetime")?.let { l ->
                 with(book.lifetime) {
@@ -38,6 +41,7 @@ class StatsStore(private val file: File) {
         try {
             val o = JSONObject()
             book.current?.let { o.put("current", runTo(it)) }
+            o.put("parked", JSONArray().apply { book.parked.values.forEach { put(runTo(it)) } })
             o.put("recent", JSONArray().apply { book.recent.forEach { put(runTo(it)) } })
             o.put("lifetime", JSONObject().apply {
                 with(book.lifetime) {

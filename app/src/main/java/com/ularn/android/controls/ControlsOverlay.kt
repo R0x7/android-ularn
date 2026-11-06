@@ -16,6 +16,8 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import com.ularn.android.game.ContextUi
+import android.view.accessibility.AccessibilityNodeProvider
+import com.ularn.android.a11y.ControlsAccessibility
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.hypot
@@ -43,7 +45,7 @@ class ControlsOverlay(context: Context) : View(context) {
     var listener: Listener? = null
 
     var layout: ControlLayout = ControlLayout()
-        set(v) { field = v; selectedId = null; presses.clear(); invalidate() }
+        set(v) { field = v; selectedId = null; presses.clear(); invalidate(); a11y.invalidateAll() }
 
     var editMode = false
         set(v) {
@@ -53,6 +55,7 @@ class ControlsOverlay(context: Context) : View(context) {
             mainHandler.removeCallbacksAndMessages(null)
             listener?.onSelectionChanged(null)
             invalidate()
+            a11y.invalidateAll()
         }
 
     var snapToGrid = true
@@ -88,6 +91,38 @@ class ControlsOverlay(context: Context) : View(context) {
     private val path = Path()
 
     private val accent = Color.rgb(255, 190, 60)
+
+    /* saves / a11y */
+    /** Label text size multiplier (accessibility setting). */
+    var textScale = 1f
+        set(v) { field = v; invalidate() }
+    /** Opaque, outlined controls with pure white labels. */
+    var highContrast = false
+        set(v) { field = v; invalidate() }
+    /** TalkBack: virtual views for each button and D-pad direction. */
+    private val a11y by lazy { ControlsAccessibility(this) }
+    internal val isRunModifierOn get() = runArmed || runLocked
+    override fun getAccessibilityNodeProvider(): AccessibilityNodeProvider = a11y
+    /** With TalkBack exploring by touch, claim hovers only over a control (the map below gets the rest). */
+    override fun dispatchHoverEvent(event: MotionEvent): Boolean =
+        if (a11y.isTouchExplorationOn) a11y.onHover(event) else super.dispatchHoverEvent(event)
+
+    /** TalkBack double-tap on a control ([zone]: D-pad zone, or -1 for a button). */
+    internal fun a11yActivate(spec: ControlSpec, zone: Int) {
+        if (editMode) return
+        if (spec.type == ControlType.DPAD) {
+            if (zone in 0..8) fireDpad(spec, zone)
+        } else when (spec.action) {
+            ButtonAction.KEYS -> { haptic(); sendKeys(spec.keys) }
+            ButtonAction.RUN -> {
+                haptic()
+                if (runArmed || runLocked) { runArmed = false; runLocked = false } else runArmed = true
+            }
+            else -> listener?.onAction(spec.action)
+        }
+        invalidate()
+        a11y.invalidateAll(clearFocus = false)
+    }
 
     // ------------------------------------------------------------- geometry
 
@@ -359,7 +394,7 @@ class ControlsOverlay(context: Context) : View(context) {
 
     override fun onDraw(canvas: Canvas) {
         if (editMode) drawGrid(canvas)
-        val alpha = if (editMode) maxOf(layout.opacity, 0.75f) else layout.opacity
+        val alpha = (if (editMode) maxOf(layout.opacity, 0.75f) else layout.opacity).let { if (highContrast) maxOf(it, 0.92f) else it }
         for (c in layout.controls) {
             val pressed = presses.values.any { it.spec === c && it.inside }
             when (c.type) {
@@ -398,21 +433,23 @@ class ControlsOverlay(context: Context) : View(context) {
             when {
                 lit -> accent
                 active -> Color.argb(230, 120, 90, 30)
-                else -> Color.argb(215, 38, 40, 48)
+                else -> if (highContrast) Color.BLACK else Color.argb(215, 38, 40, 48)
             }, alpha
         )
         if (c.shape == ButtonShape.CIRCLE) canvas.drawCircle(rect.centerX(), rect.centerY(), r, fill)
         else canvas.drawRoundRect(rect, r, r, fill)
         // top highlight + outline
-        stroke.strokeWidth = 1f * density
-        stroke.color = a(if (lit) Color.argb(120, 0, 0, 0) else Color.argb(if (active) 230 else 70, 255, 255, 255), alpha)
+        stroke.strokeWidth = (if (highContrast) (if (active) 4f else 2f) else 1f) * density
+        stroke.color = a(if (lit) Color.argb(120, 0, 0, 0) else Color.argb(if (active || highContrast) 230 else 70, 255, 255, 255), alpha)
+        if (highContrast) stroke.color = if (lit) Color.BLACK else Color.WHITE
         if (c.shape == ButtonShape.CIRCLE) canvas.drawCircle(rect.centerX(), rect.centerY(), r - 0.5f * density, stroke)
         else { rect.inset(0.5f * density, 0.5f * density); canvas.drawRoundRect(rect, r, r, stroke); rect.inset(-0.5f * density, -0.5f * density) }
 
         val label = (if (ctx) contextUi.label else null)
             ?: c.label.ifEmpty { if (c.action == ButtonAction.CONTEXT) "Act" else KeySequence.describe(KeySequence.parse(c.keys)) }
         text.color = a(if (lit) Color.rgb(30, 22, 0) else Color.WHITE, minOf(1f, alpha + 0.35f))
-        fitText(label, rect.width() * 0.82f, minOf(rect.height() * 0.42f, 16f * density))
+        if (highContrast) text.color = if (lit) Color.BLACK else Color.WHITE
+        fitText(label, rect.width() * 0.82f, minOf(rect.height() * 0.42f * textScale, 16f * density * textScale, rect.height() * 0.7f))
         val fm = text.fontMetrics
         canvas.drawText(label, rect.centerX(), rect.centerY() - (fm.ascent + fm.descent) / 2, text)
     }
@@ -431,10 +468,10 @@ class ControlsOverlay(context: Context) : View(context) {
         val running = runArmed || runLocked
 
         // base
-        fill.color = a(Color.argb(205, 34, 36, 44), alpha)
+        fill.color = a(if (highContrast) Color.BLACK else Color.argb(205, 34, 36, 44), alpha)
         canvas.drawCircle(cx, cy, r, fill)
-        stroke.strokeWidth = 1f * density
-        stroke.color = a(Color.argb(70, 255, 255, 255), alpha)
+        stroke.strokeWidth = (if (highContrast) 2f else 1f) * density
+        stroke.color = a(if (highContrast) Color.WHITE else Color.argb(70, 255, 255, 255), alpha)
         canvas.drawCircle(cx, cy, r - 0.5f * density, stroke)
 
         // zone index -> angle (degrees, 0 = east, CCW)
@@ -464,13 +501,13 @@ class ControlsOverlay(context: Context) : View(context) {
             path.lineTo(tipX - dx * sz * 1.5f - dy * sz, tipY - dy * sz * 1.5f + dx * sz)
             path.lineTo(tipX - dx * sz * 1.5f + dy * sz, tipY - dy * sz * 1.5f - dx * sz)
             path.close()
-            fill.color = a(if (on) Color.rgb(30, 22, 0) else if (running) accent else Color.argb(235, 235, 235, 240), alpha)
+            fill.color = a(if (on) Color.rgb(30, 22, 0) else if (running) accent else if (highContrast) Color.WHITE else Color.argb(235, 235, 235, 240), alpha)
             canvas.drawPath(path, fill)
             // key label: only while editing or when remapped away from the defaults
             if (editMode || k != ControlSpec.DEFAULT_DPAD_KEYS[zone]) {
                 val lbl = KeySequence.describe(KeySequence.parse(k))
                 text.color = a(if (on) Color.rgb(30, 22, 0) else Color.argb(200, 255, 255, 255), minOf(1f, alpha + 0.3f))
-                fitText(lbl, r * 0.3f, r * 0.16f)
+                fitText(lbl, r * 0.3f, r * 0.16f * textScale)
                 val fm = text.fontMetrics
                 canvas.drawText(lbl, cx + dx * r * 0.52f, cy + dy * r * 0.52f - (fm.ascent + fm.descent) / 2, text)
             }
@@ -479,11 +516,11 @@ class ControlsOverlay(context: Context) : View(context) {
         val centreKey = c.dpadKeys.getOrElse(4) { "" }
         if (centreKey.isNotEmpty()) {
             val on = activeZone == 4
-            fill.color = a(if (on) accent else Color.argb(200, 55, 58, 68), alpha)
+            fill.color = a(if (on) accent else if (highContrast) Color.DKGRAY else Color.argb(200, 55, 58, 68), alpha)
             canvas.drawCircle(cx, cy, inner * 0.85f, fill)
             val lbl = if (centreKey == ".") "•" else KeySequence.describe(KeySequence.parse(centreKey))
             text.color = a(if (on) Color.rgb(30, 22, 0) else Color.WHITE, minOf(1f, alpha + 0.3f))
-            fitText(lbl, inner * 1.3f, inner * 0.8f)
+            fitText(lbl, inner * 1.3f, inner * 0.8f * minOf(textScale, 1.2f))
             val fm = text.fontMetrics
             canvas.drawText(lbl, cx, cy - (fm.ascent + fm.descent) / 2, text)
         }

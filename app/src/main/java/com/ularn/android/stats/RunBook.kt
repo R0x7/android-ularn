@@ -126,6 +126,8 @@ object Achievements {
 
 class RunBook {
     var current: RunRecord? = null
+    /** Unfinished games other than [current] (e.g. in other save slots), by run id. */
+    val parked = LinkedHashMap<Int, RunRecord>()
     val lifetime = Lifetime()
     /** Finished runs, newest first. */
     val recent = ArrayList<RunRecord>()
@@ -147,12 +149,20 @@ class RunBook {
         if (run == null || run.id != o.runId) {
             // A run that already ended never comes back (its save files are gone).
             if (recent.any { it.id == o.runId }) return emptyList()
-            // A new character: whatever was in progress can no longer be
-            // continued (starting a new game discards its save/checkpoint).
-            run?.let { if (!it.finished) finish(it, Outcome.QUIT, "abandoned", 0, now) }
-            run = RunRecord(o.runId, now)
+            // Another game. With save slots the previous one may still be
+            // continued later, so park it instead of ending it.
+            run?.let { if (!it.finished) parked[it.id] = it }
+            val resumed = parked.remove(o.runId)
+            run = resumed ?: RunRecord(o.runId, now)
             current = run
-            lifetime.gamesPlayed++
+            if (resumed == null) lifetime.gamesPlayed++
+            // More unfinished games than there are slots: the oldest ones'
+            // saves must have been overwritten or deleted.
+            while (parked.size > MAX_PARKED) {
+                val oldest = parked.values.minByOrNull { it.startedAt } ?: break
+                parked.remove(oldest.id)
+                finish(oldest, Outcome.QUIT, "abandoned", 0, now)
+            }
             important = true
         }
         if (run.finished) return emptyList()
@@ -256,6 +266,8 @@ class RunBook {
         const val END_QUIT = 3
         const val DUNGEON_BOTTOM = 15
         const val MAX_RECENT = 30
+        /** Matches the number of save slots. */
+        const val MAX_PARKED = 10
 
         private val ON_LEVEL = Regex("""\s+on\s+(H|\d+|V\d)$""")
         private val TAGS = Regex("""\s*\((wizard|cheater)\)""")

@@ -50,8 +50,38 @@ Requires Android 7.0+ (API 24). Builds for arm64-v8a, armeabi-v7a and x86_64.
 - **Prompts:** whenever the game asks a question (y/n, pick an item, a store
   menu, how much gold), buttons for the valid answers appear under the map.
   Tap a text page (inventory, help, scores) to continue.
+- **Minimap:** a round map in the corner of the screen, centred on you.
+  White dot = you, yellow = monsters, red = items and gold, with markers for
+  stairs, the volcanic shaft, shops, fountains, altars, thrones and traps.
+  It only shows what you have seen. Tap it for the whole level with a legend
+  (toggle in Settings).
+- **Action button:** changes with what you stand on or next to — *Pick up*,
+  *Stairs ▲/▼*, *Climb*, *Enter*, *Open chest*, *Open ←* a door, *Fountain*,
+  *Altar*, *Throne*… and is dimmed when there is nothing to do.
+- **Spell picker:** the *Cast* button lists the spells you have learned this
+  game with their codes and what they do (greyed out with no spell points);
+  *Type code…* still lets you enter a code by hand.
+- **Danger cues:** below a chosen share of your HP (default 25%) the HP bar
+  pulses red, the map edge glows red and the phone vibrates once; a big hit
+  flashes the map. Each cue can be turned off in Settings.
+- **Statistics & achievements** (start screen and menu): lifetime totals,
+  best depth and score, fastest win, causes of death, recent games and 17
+  achievements, kept on the device.
+- **Tablets and foldables:** on a wide screen a side panel shows your stats,
+  effects, the level overview and your inventory; it follows fold/unfold and
+  split screen (toggle in Settings).
 - **Hardware / Bluetooth keyboards** work directly; arrow keys and the numpad
   move (toggle in Settings).
+- **Save slots:** the start screen lists your slots with each character's
+  name, level, depth and when it was last played. Tap a slot to continue it,
+  resume its checkpoint, start a new game in it, rename, delete, or export it
+  to a `.zip` file (and *Import a saved game…* to load one into an empty
+  slot). Each slot has its own save and checkpoint; the scoreboard is shared.
+  A save from before slots existed is moved into slot 1 automatically.
+- **Accessibility** (Settings): game text size (85–150%, also following the
+  system font size), a high-contrast mode, TalkBack labels for every
+  on-screen button and D-pad direction, and an option to have TalkBack read
+  new game messages.
 - **Checkpoints:** the game checkpoints every 25 moves and whenever the app
   goes to the background, so if Android closes it you can *Resume from
   checkpoint*. Use *Save game & quit* (or `S`) for a full save.
@@ -77,7 +107,8 @@ the *Edit controls* action). Portrait and landscape have separate layouts.
 | **Done / Cancel** | keep or discard changes |
 
 **Button properties:** label, action (*Send keys*, *Run modifier*,
-*Show/hide keyboard*, *Open menu*, *Edit controls*), keys to send, repeat
+*Show/hide keyboard*, *Open menu*, *Edit controls*, *Context action*,
+*Cast spell*), keys to send, repeat
 while held, round/rounded shape, width and height. Duplicate or delete from
 *More…*.
 
@@ -132,8 +163,11 @@ app/src/main/java/com/ularn/android/
 ```
 
 Each game is a fresh `fork()` of the app process, so the game's global state
-always starts clean. Game files (`ularn_player.sav`, `ularn_player.ckp`,
-`Uscore`, `ularn.opt`) live in the app's private storage.
+always starts clean. Game files live in the app's private storage: the game
+runs in `ularn163/` (data files and the shared `Uscore`), with `$HOME` set to
+the save slot's folder `ularn163/slots/<n>/`, where Ularn keeps
+`ularn_player.sav`, `ularn_player.ckp` and `ularn.opt`; the app adds
+`slot.json` (name, level, depth, last played).
 
 ## License
 
