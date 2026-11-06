@@ -1,0 +1,35 @@
+# tile 377: tinfoil hat on the floor (Wild Edition: hats)
+# generated shapes, hand-tuned palette; '.' is transparent
+# T=#f4f8fa U=#5a6066 k=#426b6b m=#000000 t=#c4ccd2 u=#8c949c
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkmmkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkmTumkkkkkkkkkkkkkk
+kkkkkkkkkkkkkmTttTmkkkkkkkkkkkkk
+kkkkkkkkkkkkmTTTTumkkkkkkkkkkkkk
+kkkkkkkkkkkmTTtTtTumkkkkkkkkkkkk
+kkkkkkkkkkmTuTttuuuumkkkkkkkkkkk
+kkkkkkkkkkmTTuttttuuumkkkkkkkkkk
+kkkkkkkkkmTTTtttTuuuumkkkkkkkkkk
+kkkkkkkkkkmTTTttttuuTmkkkkkkkkkk
+kkkkkkkkkkmTTTttttuuumkkkkkkkkkk
+kkkkkkkkkmTTTuttttuuuumkkkkkkkkk
+kkkkkkkkkmTTTTttuuuuuumkkkkkkkkk
+kkkkkkkkmTTTTtttttTuuuumkkkkkkkk
+kkkkkkkkmTTTTTuutTTuTuTmmkkkkkkk
+kkkkkkkmTTTTTTttttutuuuuumkkkkkk
+kkkkkkmUutUtUUuUuUuuutuutmmkkkkk
+kkkkkkkmmmmmmmmmmmmmmmmmmmmmmkkk
+kkkkkkkkkmmmmmmmmmmmmmmmmmmmmkkk
+kkkkkkkkkkkmmmmmmmmmmmmmmmmkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk

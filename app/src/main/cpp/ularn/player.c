@@ -83,6 +83,7 @@
 #include "scores.h"
 #include "player.h"
 #include "wild.h"
+#include "wild_hats.h"
 #include "monster.h"
 #include "dungeon.h"
 #include "dungeon_obj.h"
@@ -653,6 +654,7 @@ int moveplayer(int dir)
 {
   int k,m,i,j;
 
+  wild_hats_unconfuse();   /* Wild Edition: tinfoil hat */
   if (c[CONFUSE])
   {
     if (c[LEVEL]<rnd(30))
@@ -1937,6 +1939,7 @@ void regen(void)
     {
       c[ECOUNTER] = 100+4*(c[HARDGAME]-c[LEVEL]-c[ENERGY]);
       c[SPELLS]++;
+      wild_hats_regen();   /* Wild Edition: wizard hat doubles it */
 
       flag |= 1;
     }

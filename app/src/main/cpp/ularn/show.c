@@ -39,6 +39,7 @@
 #include "spell.h"
 #include "itm.h"
 #include "show.h"
+#include "wild_hats.h"
 
 /* =============================================================================
  * Local variables
@@ -753,4 +754,5 @@ void show3 (int index)
     Print(" (being worn)");
   }
 
+  if (wild_hats_worn_slot() == index) Print(" (on your head)");   /* Wild Edition */
 }

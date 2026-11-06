@@ -39,6 +39,7 @@
 #include "potion.h"
 #include "scores.h"
 #include "itm.h"
+#include "wild_hats.h"
 
 /* =============================================================================
  * Local functions
@@ -874,6 +875,7 @@ void opit(void)
       Print("\nYou float right over the pit.");
       return;
     }
+    if (wild_hats_fly("pit")) return;   /* Wild Edition: propeller beanie */
 
     if (level==DBOTTOM || level == VBOTTOM)
     {

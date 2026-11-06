@@ -1,0 +1,37 @@
+# tile 374: propeller beanie on the floor (Wild Edition: hats)
+# generated shapes, hand-tuned palette; '.' is transparent
+# B=#4870c8 E=#4cac54 R=#d8443c S=#c8ccd0 W=#eeeae0 Y=#eedc37
+# b=#2c4890 e=#2c7834 k=#426b6b m=#000000 r=#a42820 s=#7c8088
+# w=#bdb8ad y=#b99018
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkmmmmmmkkmmmmmmkkkkkkkkk
+kkkkkkkkmRRRRRRmmBBBBBBmkkkkkkkk
+kkkkkkkkkmmrrrrSsbbbbmmkkkkkkkkk
+kkkkkkkkkkkmmmmSsmmmmkkkkkkkkkkk
+kkkkkkkkkkkmmRRWwEemmkkkkkkkkkkk
+kkkkkkkkkmmRRRYYBBEeemmkkkkkkkkk
+kkkkkkkkmRRRRYYYBBBEEeemkkkkkkkk
+kkkkkkkkmRRRRYYYBBBEEeemkkkkkkkk
+kkkkkkkmRRRRYYYYBBBBEeeemkkkkkkk
+kkkkkkmRRRRRYYYYBBBBEEeeemkkkkkk
+kkkkkkmRRRRRYYYYBBBBEEeeemkkkkkk
+kkkkkkmrrrrryyyybbbbeeeeemmkkkkk
+kkkkkkkmmmmmmmmmmmmmmmmmmmmmmkkk
+kkkkkkkkkmmmmmmmmmmmmmmmmmmmmkkk
+kkkkkkkkkkkmmmmmmmmmmmmmmmmkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk

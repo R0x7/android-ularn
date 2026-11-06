@@ -43,6 +43,7 @@
 #include "scores.h"
 #include "show.h"
 #include "itm.h"
+#include "wild_hats.h"
 
 /* =============================================================================
  *
@@ -62,7 +63,7 @@
  */
 
 /* max # items in the dnd store */
-#define DNDSIZE   93
+#define DNDSIZE   98   /* 93 + the five Wild Edition hats */
 
 static int dnditm = 0;
 
@@ -201,7 +202,13 @@ static struct _itm itm[DNDSIZE] =  {
 { 150,  0,    OWWAND,   0,  0 } ,
 { 50,   0,    OBRASSLAMP, 0,  0 } , /* 90 */
 { 9500, 0,    OPSTAFF,  0,  0 },
-{ 10000, 0, OLIFEPRESERVER, 0, 0 }
+{ 10000, 0, OLIFEPRESERVER, 0, 0 },
+/* Wild Edition hats (hidden when the feature is off: wild_hats_hidden()) */
+{ 60,   0,    OHATCONE,      0,  1 },
+{ 120,  0,    OHATPROPELLER, 0,  1 },
+{ 250,  0,    OHATWIZARD,    0,  1 },
+{ 40,   0,    OHATPARTY,     0,  1 },
+{ 80,   0,    OHATTINFOIL,   0,  1 }
 };
 
 /* =============================================================================
@@ -344,7 +351,7 @@ static void dnditem(int i)
   y = ((i%IVENSIZE)>>1) + 5;
 
   MoveCursor(x, y);
-  if (itm[i].qty == 0)
+  if (itm[i].qty == 0 || wild_hats_hidden(itm[i].obj))
   {
     Printf("%39s", "");
     return;
@@ -365,7 +372,7 @@ static void dnditem(int i)
     Printf("%s", objectname[(int) itm[i].obj]);
   }
   MoveCursor(x+31, y);
-  Printf("%6ld", ((long) (itm[i].price*10L)));
+  Printf("%6ld", wild_hats_price((long) (itm[i].price*10L)));   /* Wild Edition: party hat */
 }
 
 /* =============================================================================
@@ -493,11 +500,11 @@ void dndstore(void)
       i += dnditm - 'a';
       if (i>=DNDSIZE)
         outofstock();
-      else if (itm[i].qty <= 0)
+      else if (itm[i].qty <= 0 || wild_hats_hidden(itm[i].obj))
         outofstock();
       else if (pocketfull())
         handsfull();
-      else if (c[GOLD] < itm[i].price*10L)
+      else if (c[GOLD] < wild_hats_price(itm[i].price*10L))
         nogold();
       else 
       {
@@ -505,7 +512,7 @@ void dndstore(void)
         if (itm[i].mem != 0)
           itm[i].mem[(int) itm[i].arg] = 1 ;
 
-        c[GOLD] -= itm[i].price*10L;
+        c[GOLD] -= wild_hats_price(itm[i].price*10L);
         itm[i].qty--;
         take(itm[i].obj,itm[i].arg);
         if (itm[i].qty==0)

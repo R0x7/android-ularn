@@ -25,6 +25,7 @@
 #include "header.h"
 #include "object.h"
 #include "wild.h"
+#include "wild_hats.h"
 #include "player.h"
 #include "monster.h"
 #include "itm.h"
@@ -993,6 +994,7 @@ void lookforobject(void)
       if (rnd(17)<13) return;   /* for a trap door */
       item[playerx][playery] = OTRAPDOOR;
     case OTRAPDOOR:
+      if (wild_hats_fly("trap door")) return;   /* Wild Edition: propeller beanie */
       for (i=0;i<IVENSIZE;i++)
       {
         if (iven[i]==OWWAND)

@@ -24,6 +24,7 @@
 #include "scroll.h"
 
 #include "ularn_android_panel.h"
+#include "wild_hats.h"
 
 static int object_class(int obj)
 {
@@ -161,6 +162,9 @@ static void describe(int idx, char *out, size_t len)
   n = strlen(out);
   if ((c[WEAR] == idx) || (c[SHIELD] == idx))
     snprintf(out + n, len - n, " (being worn)");
+  n = strlen(out);
+  if (wild_hats_worn_slot() == idx)   /* Wild Edition */
+    snprintf(out + n, len - n, " (on your head)");
 }
 
 void android_panel_inventory(UlarnShared *s)

@@ -38,6 +38,7 @@
 #include "player.h"
 #include "itm.h"
 #include "wild.h"
+#include "wild_hats.h"
 
 /* =============================================================================
  * Exported variables
@@ -375,6 +376,7 @@ struct isave
  */
 static int isconfuse(void)
 {
+  wild_hats_unconfuse();   /* Wild Edition: tinfoil hat */
   if (c[CONFUSE])
   {
     Print(" You can't aim your magic!");

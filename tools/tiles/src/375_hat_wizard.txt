@@ -1,0 +1,36 @@
+# tile 375: pointy wizard hat on the floor (Wild Edition: hats)
+# generated shapes, hand-tuned palette; '.' is transparent
+# N=#5068c0 Y=#eedc37 d=#18204c k=#426b6b m=#000000 n=#2c3c8c
+# y=#b99018
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkmkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkmNmkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkmNdmkkkkkkkkkkkk
+kkkkkkkkkkkkkkkmNndmkkkkkkkkkkkk
+kkkkkkkkkkkkkkmNnndmkkkkkkkkkkkk
+kkkkkkkkkkkkkkmNnndmkkkkkkkkkkkk
+kkkkkkkkkkkkkmNNnddmkkkkkkkkkkkk
+kkkkkkkkkkkkmNNnnddmkkkkkkkkkkkk
+kkkkkkkkkkkkmNNnnddmkkkkkkkkkkkk
+kkkkkkkkkkkmNynnnddmkkkkkkkkkkkk
+kkkkkkkkkkmNyYyndddmkkkkkkkkkkkk
+kkkkkkkkkkmNNynndddmkkkkkkkkkkkk
+kkkkkkkkkmNNNnnnndddmkkkkkkkkkkk
+kkkkkkkkkmNNNnnnydddmkkkkkkkkkkk
+kkkkkkkkmNNNnnnyYyddmkkkkkkkkkkk
+kkkkkkkkmNNNnnnnydddmkkkkkkkkkkk
+kkkkkkkmYYYYYYYYYyyyymkkkkkkkkkk
+kkkkkmmmNNNNnnnnnddddmmmmkkkkkkk
+kkkkmNNNNNNnnnnnnnnddddddmkkkkkk
+kkkmnnnnnnnnnnnnnnndddddddmkkkkk
+kkkkmmmmmmmmmmmmmmmmmmmmmmmmmmkk
+kkkkkkmmmmmmmmmmmmmmmmmmmmmmmmkk
+kkkkkkkkkmmmmmmmmmmmmmmmmmmkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
