@@ -51,6 +51,11 @@ Requires Android 7.0+ (API 24). Builds for arm64-v8a, armeabi-v7a and x86_64.
 - **Prompts:** whenever the game asks a question (y/n, pick an item, a store
   menu, how much gold), buttons for the valid answers appear under the map.
   Tap a text page (inventory, help, scores) to continue.
+- **Text pages** (help, shops, bank, scores) are laid out for an 80-column
+  terminal. When a page is too wide to read on your screen (a phone held
+  upright), it is re-wrapped to fit: paragraphs flow to the screen width and
+  two-column price lists become one column. Drag to scroll if it is still
+  taller than the screen.
 - **Hardware / Bluetooth keyboards** work directly; arrow keys and the numpad
   move (toggle in Settings).
 - **Checkpoints:** the game checkpoints every 25 moves and whenever the app
