@@ -18,6 +18,7 @@ import android.view.View
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import com.ularn.android.GameSession
@@ -217,6 +218,35 @@ class SlotsController(
         box.addView(name)
         val female = CheckBox(activity).apply { text = "Female character"; isChecked = settings.female }
         box.addView(female)
+
+        // Difficulty: the game's -d option. Applies to new games only; a
+        // restored game keeps the difficulty it was started with.
+        val diffLabel = TextView(activity).apply { setPadding(0, dp(14), 0, 0) }
+        val diffInfo = TextView(activity).apply { textSize = 12f; alpha = 0.75f }
+        val diff = SeekBar(activity).apply {
+            max = Settings.MAX_DIFFICULTY
+            progress = settings.difficulty
+            this.id = View.generateViewId()
+        }
+        diffLabel.labelFor = diff.id
+        fun showDiff(k: Int) {
+            diffLabel.text = "Difficulty: $k" + if (k == 0) " (normal)" else ""
+            diffInfo.text = Settings.describeDifficulty(k)
+            diff.stateDescriptionCompat("Level $k")
+        }
+        diff.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(s: SeekBar?, p: Int, fromUser: Boolean) = showDiff(p)
+            override fun onStartTrackingTouch(s: SeekBar?) {}
+            override fun onStopTrackingTouch(s: SeekBar?) {}
+        })
+        showDiff(diff.progress)
+        box.addView(diffLabel)
+        box.addView(diff)
+        box.addView(diffInfo)
+        box.addView(TextView(activity).apply {
+            text = "Once you have won, the game sets your next game at least one level harder."
+            textSize = 12f; alpha = 0.6f; setPadding(0, dp(6), 0, 0)
+        })
         AlertDialog.Builder(activity)
             .setTitle("New game in slot $id")
             .setView(box)
@@ -229,10 +259,15 @@ class SlotsController(
                 } catch (e: Exception) {
                     toast("Couldn't prepare slot $id: ${e.message}"); return@setPositiveButton
                 }
-                start(id, emptyList())
+                settings.difficulty = diff.progress
+                start(id, Settings.difficultyArgs(diff.progress))
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun SeekBar.stateDescriptionCompat(text: String) {
+        if (Build.VERSION.SDK_INT >= 30) stateDescription = text
     }
 
     private fun start(id: Int, args: List<String>) {
