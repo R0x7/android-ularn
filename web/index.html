@@ -27,6 +27,14 @@
       <kbd>?</kbd> help, <kbd>S</kbd> save &amp; quit. On a phone use the buttons under the map.</p>
     <p class="hint"><a href="https://github.com/R0x7/android-ularn">Source and Android app</a></p>
   </section>
+  <section id="lb-title" class="lb" hidden>
+    <h2>Leaderboard</h2>
+    <p class="lb-status"></p>
+    <div class="lb-scroll"><table>
+      <thead><tr><th class="num">#</th><th>Name</th><th class="num">Score</th><th>Character</th><th>How it ended</th><th class="date">Date</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </section>
 
   <section id="game" hidden>
     <div id="hud"></div>
@@ -54,10 +62,20 @@
   <section id="ended" hidden>
     <h2 id="endmsg">The game has ended.</h2>
     <button id="again">Back to the title screen</button>
+    <section id="lb-end" class="lb" hidden>
+    <h2>Leaderboard</h2>
+    <p class="lb-status"></p>
+    <div class="lb-scroll"><table>
+      <thead><tr><th class="num">#</th><th>Name</th><th class="num">Score</th><th>Character</th><th>How it ended</th><th class="date">Date</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    </section>
   </section>
 
   <p id="loading">Loading…</p>
 </div>
+<script src="leaderboard-config.js"></script>
+<script src="leaderboard.js"></script>
 <script src="game.js"></script>
 <script async src="ularn.js"></script>
 </body>

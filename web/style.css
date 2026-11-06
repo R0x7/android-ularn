@@ -58,3 +58,17 @@ pre { margin: 0; font: 13px/1.25 ui-monospace, "DejaVu Sans Mono", Menlo, monosp
 @media (pointer: fine) and (min-width: 900px) { #controls { opacity: .85; } }
 #ended { padding: 40px 0; }
 #loading { color: var(--dim); }
+
+/* leaderboard */
+.lb { max-width: 820px; margin: 28px 0; }
+.lb h2 { font-size: 20px; margin: 0 0 4px; }
+.lb-status { color: var(--dim); margin: 0 0 8px; }
+.lb-scroll { max-height: 420px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; }
+.lb table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.lb th, .lb td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--line); }
+.lb th { position: sticky; top: 0; background: var(--btn); font-weight: 600; }
+.lb td:nth-child(5) { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb .num { text-align: right; font-variant-numeric: tabular-nums; }
+.lb tr.mine td { color: var(--accent); }
+.lb tr.just td { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--fg); }
+@media (max-width: 600px) { .lb .date, .lb th:nth-child(4), .lb td:nth-child(4) { display: none; } }

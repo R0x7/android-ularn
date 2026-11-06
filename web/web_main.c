@@ -86,7 +86,7 @@ EMSCRIPTEN_KEEPALIVE UlarnShared *ularn_web_state(void) { return &state; }
 /* Field offsets as JSON, so the page never mirrors the struct by hand. */
 EMSCRIPTEN_KEEPALIVE const char *ularn_web_layout(void)
 {
-  static char buf[2048];
+  static char buf[4096];
 #define F(name) "\"" #name "\":%d,"
 #define O(name) (int) offsetof(UlarnShared, name)
   snprintf(buf, sizeof buf,
@@ -96,6 +96,7 @@ EMSCRIPTEN_KEEPALIVE const char *ularn_web_layout(void)
            F(exp) F(level_name) F(effects) F(stats) F(level_title) F(game_time)
            F(msg_chr) F(msg_fmt) F(text_chr) F(text_fmt) F(mm_cat) F(inv_text)
            F(end_state) F(end_score) F(end_reason) F(hat_tile) F(pet_x) F(pet_y) F(weather)
+           F(run_id) F(kills) F(class_num) F(hardness) F(wild_flags) F(dlevel)
            "\"size\":%d,\"map_w\":%d,\"map_h\":%d,\"line\":%d,\"msg_lines\":%d,\"text_lines\":%d}",
            O(seq), O(display_mode), O(input_mode), O(answers), O(caret), O(cursor_x), O(cursor_y),
            O(player_x), O(player_y), O(player_cursor), O(tiles), O(overlay),
@@ -103,11 +104,17 @@ EMSCRIPTEN_KEEPALIVE const char *ularn_web_layout(void)
            O(exp), O(level_name), O(effects), O(stats), O(level_title), O(game_time),
            O(msg_chr), O(msg_fmt), O(text_chr), O(text_fmt), O(mm_cat), O(inv_text),
            O(end_state), O(end_score), O(end_reason), O(hat_tile), O(pet_x), O(pet_y), O(weather),
+           O(run_id), O(kills), O(class_num), O(hardness), O(wild_flags), O(dlevel),
            (int) sizeof(UlarnShared), US_MAP_W, US_MAP_H, US_LINE_LEN, US_MSG_LINES, US_TEXT_LINES);
 #undef F
 #undef O
   return buf;
 }
+
+/* 1 if this run must stay off the shared leaderboard: wizard mode or a
+ * cheat, the same runs Ularn keeps off its own scoreboard (scores.c). */
+extern char wizard, cheat;
+EMSCRIPTEN_KEEPALIVE int ularn_web_unranked(void) { return wizard || cheat; }
 
 /* ---- exit ---- */
 void ularn_exit(int status)

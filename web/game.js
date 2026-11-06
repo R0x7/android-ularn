@@ -45,11 +45,24 @@ var Module = {
   onGameExit(status) {
     running = false;
     render(true);
+    checkEnd();
     syncSave(() => {
       const end = i32(L.end_state);
-      $('endmsg').textContent = end ? 'Game over: ' + str(L.end_reason, 81) + ' (score ' + i32(L.end_score) + ')'
+      $('endmsg').textContent = end === 2 ? 'You won! Score ' + i32(L.end_score).toLocaleString()
+        : end ? 'Game over: ' + str(L.end_reason, 81) + ' (score ' + i32(L.end_score).toLocaleString() + ')'
         : exists(SAVE) ? 'Game saved.' : 'The game has ended.';
+      $('game').hidden = true;
       $('ended').hidden = false;
+      window.scrollTo(0, 0);
+      const run = end && !unranked ? i32(L.run_id) : 0;
+      (scoreSent || Promise.resolve(true)).then((ok) => {
+        Leaderboard.show($('lb-end'), run).then(() => {
+          if (unranked) $('lb-end').querySelector('.lb-status').textContent =
+            'Wizard and cheat games are not put on the leaderboard.';
+          else if (run && !ok) $('lb-end').querySelector('.lb-status').textContent =
+            "Couldn't reach the leaderboard; your score will be sent next time you open the game.";
+        });
+      });
     });
   },
 };
@@ -79,6 +92,36 @@ function showTitle() {
   $('checkpoint').hidden = exists(SAVE) || !exists(CKP);
   $('newgame').textContent = exists(SAVE) ? 'New game (replaces the save)' : 'New game';
   ($('continue').hidden ? $('newgame') : $('continue')).focus();
+  Leaderboard.flush().finally(() => Leaderboard.show($('lb-title')));
+}
+
+// ---------------------------------------------------------- leaderboard
+const CLASSES = ['Ogre', 'Wizard', 'Klingon', 'Elf', 'Rogue', 'Adventurer', 'Dwarf', 'Rambo'];
+const OUTCOMES = { 1: 'died', 2: 'won', 3: 'quit' };
+let scoreSent = null;   // promise of the current run's submission
+let unranked = false;   // wizard / cheat run: not submitted
+
+/* The game sets end_state when it shows the final score (death, win or
+ * quit). Submit that once per run, as soon as it appears. */
+function checkEnd() {
+  if (scoreSent || !L) return;
+  const end = i32(L.end_state), run = i32(L.run_id);
+  if (!end || !run || !OUTCOMES[end]) return;
+  if (Module._ularn_web_unranked()) { scoreSent = Promise.resolve(true); unranked = true; return; }
+  scoreSent = Leaderboard.submit({
+    run_id: run,
+    name: store.get('name', 'Adventurer'),
+    score: i32(L.end_score),
+    outcome: OUTCOMES[end],
+    reason: str(L.end_reason, 81).trim(),
+    char_class: CLASSES[i32(L.class_num)] || '',
+    char_level: i32(L.plevel),
+    dungeon: str(L.level_name, 8).trim(),
+    turns: i32(L.game_time),
+    kills: i32(L.kills),
+    difficulty: i32(L.hardness),
+    wild: (i32(L.wild_flags) & 0xffff) !== 0,
+  }).catch((e) => { console.warn(e); return false; });
 }
 
 function start(mode) {
@@ -92,6 +135,7 @@ function start(mode) {
   FS.writeFile('/ularn/home/ularn.opt', '# Written by Ularn Web\nOPTION ' + opts.join(',') + '\n');
 
   $('title').hidden = true;
+  $('lb-title').hidden = true;
   $('game').hidden = false;
   running = true;
   Module.ccall('ularn_web_run', null, ['number', 'number'], [wild ? WILD_ALL : 0, mode === 'ckp' ? 1 : 0], { async: true });
@@ -185,7 +229,7 @@ let view = null;
 function frame() {
   if (L && running) {
     const seq = i32(L.seq);
-    if (seq !== lastSeq) { lastSeq = seq; render(); }
+    if (seq !== lastSeq) { lastSeq = seq; render(); checkEnd(); }
   }
   if (running) requestAnimationFrame(frame);
 }

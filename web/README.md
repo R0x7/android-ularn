@@ -45,6 +45,29 @@ build only) points the front end's `read()` of the key pipe and `usleep()`
 at `web_main.c`. So this branch differs from `ularn-wild` only by new files
 (`web/`, `.github/workflows/web*.yml`) and merges from it never conflict.
 
+## Leaderboard
+
+A shared top-100 leaderboard (title screen and end-of-game screen) stored in
+Supabase. Off until `leaderboard-config.js` has a project URL and anon key.
+
+Setup, once:
+1. Create a free project at https://supabase.com.
+2. SQL Editor -> New query -> paste `leaderboard.sql` -> Run. This makes the
+   `ularn_scores` table (public read, no direct writes) and the
+   `submit_score()` function, which validates an entry, ignores a run already
+   submitted and keeps only the best 100.
+3. Put the project URL and the anon / publishable key (Project Settings ->
+   API) in `leaderboard-config.js`. Both are public by design.
+
+What gets sent: when the game shows its final score (death or win) the page
+submits the name from the title screen, score, the game's own "killed by ..."
+line, class, level, dungeon, turns, kills, difficulty and whether Wild
+features were on. Wizard and cheat games are never sent (Ularn keeps them off
+its own scoreboard too), and a quick quit has no score. Runs that end offline
+are queued in the browser and sent next time. The game runs in the player's
+browser, so a determined player could still post a fake score; the table can
+be edited by hand in the Supabase dashboard.
+
 ## Not ported yet
 
 From the Android front end: the side panel, minimap, spell picker, context
