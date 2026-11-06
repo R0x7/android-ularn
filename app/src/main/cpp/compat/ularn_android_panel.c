@@ -25,10 +25,6 @@
 
 #include "ularn_android_panel.h"
 
-/* In ularn_gfx, monster tiles are 0..63 (monsttilelist); objects, the player
- * and effects all use tiles from 64 up. */
-#define MONSTER_TILE_END 64
-
 static int object_class(int obj)
 {
   switch (obj)
@@ -97,7 +93,7 @@ static int object_class(int obj)
   }
 }
 
-void android_panel_cell(UlarnShared *s, int x, int y, int tile)
+void android_panel_cell(UlarnShared *s, int x, int y, int monster_shown)
 {
   int cls;
 
@@ -107,7 +103,7 @@ void android_panel_cell(UlarnShared *s, int x, int y, int tile)
   cls = object_class((unsigned char) know[x][y]);
 
   /* GetTile() decided a monster is visible here. */
-  if (cls != US_MM_UNKNOWN && tile >= 0 && tile < MONSTER_TILE_END)
+  if (cls != US_MM_UNKNOWN && monster_shown)
     cls |= US_MM_MONSTER;
 
   s->mm_cat[y][x] = (uint8_t) cls;
@@ -151,6 +147,7 @@ static void describe(int idx, char *out, size_t len)
       break;
 
     default:
+      if (obj >= OWILD_FIRST) break;   /* Wild Edition objects: no plusses */
       /* show_plusses() */
       n = strlen(out);
       if (arg > 0 || wizard) snprintf(out + n, len - n, " +%d", arg);

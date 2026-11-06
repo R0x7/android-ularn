@@ -50,6 +50,7 @@
 #include "itm.h"
 #include "player.h"
 #include "monster.h"
+#include "wild.h"
 #include "dungeon.h"
 #include "sphere.h"
 #include "show.h"
@@ -66,7 +67,10 @@ char monstnamelist[MONST_COUNT] =
   'W', 'f', 'l', 'o', 'r', 'X', 'V', ' ',
   'p', 'q', 's', 'y', 'U', 'k', 'M', 'w',
   'D', 'D', 'P', 'x', 'n', 'D', 'D', 'u',
-  'D', '1', '2', '3', '4', '5', '6', '7',
+  'D',
+  /* Wild Edition: null pointer, fountain kraken, tax auditor, roomba */
+  '?', 'k', '$', '@',
+  '1', '2', '3', '4', '5', '6', '7',
   '9', '0'
 };
 
@@ -82,7 +86,10 @@ int monsttilelist[MONST_COUNT] =
   32, 33, 34, 35, 36, 37, 38, 39,
   40, 41, 42, 43, 44, 45, 46, 47,
   48, 49, 50, 51, 52, 53, 54, 55,
-  56, 56, 57, 58, 59, 60, 61, 62,
+  56,
+  /* Wild Edition tiles (tools/tiles/src) */
+  384, 385, 386, 387,
+  56, 57, 58, 59, 60, 61, 62,
   63
 };
 
@@ -154,6 +161,11 @@ struct monst monster[MONST_COUNT] = {
 { "platinum dragon",     10,   -7,  15, 13,  22, 1000,   150,   25000, FL_HEAD|FL_FLY},
 { "green urchin",        10,   -5,  12,  0,   3,    0,    95,    5000, 0},
 { "red dragon",          10,   -4,  13,  3,  19,  800,   120,   14000, FL_HEAD|FL_FLY},
+/* Wild Edition (compat/wild_*.c tune and spawn these; see docs/WILD_EDITION_PLAN.md) */
+{ "null pointer",         8,    2,   7,  0,   3,  200,    60,     400, FL_FLY|FL_INFRAVIS},
+{ "fountain kraken",      7,    4,   6,  0,   3,  300,    70,     300, FL_NOBEHEAD},
+{ "tax auditor",          6,    6,   0,  0,  12,    0,    40,      50, FL_HEAD},
+{ "roomba",               4,    8,   1,  0,   3,    0,    25,      30, FL_SLOW|FL_NOBEHEAD},
 { "type I demon lord",   12,  -40,  20,  3,  20,    0,   150,   50000, FL_HEAD|FL_NOBEHEAD|FL_FLY|FL_INFRAVIS},
 { "type II demon lord",  13,  -45,  25,  5,  22,    0,   200,   75000, FL_HEAD|FL_NOBEHEAD|FL_FLY|FL_INFRAVIS},
 { "type III demon lord", 14,  -50,  30,  9,  24,    0,   250,  100000, FL_HEAD|FL_NOBEHEAD|FL_FLY|FL_INFRAVIS},
@@ -1764,6 +1776,7 @@ int hitm(int x, int y, int amt, int SpellFlag)
     int i;
 
     Printf("\nThe %s died!", lastmonst);
+    wild_kill(monst, x, y);   /* Wild Edition */
     raiseexperience((long) monster[monst].experience);
     disappear(x, y);
 
@@ -1830,6 +1843,12 @@ void hitplayer (int x, int y)
 
   if (mster==LEMMING)
     return;
+
+  if (wild_dodge())   /* Wild Edition: hats / perks can make a blow miss */
+  {
+    Printf("\nThe %s misses you!", lastmonst);
+    return;
+  }
 
   if ((monster[mster].flags & FL_INFRAVIS) == 0)
   {

@@ -59,7 +59,9 @@ char objnamelist[OCOUNT] =
   /* misc */
   's', 'c', 'u',
   /* drugs */
-  ':', ':', ':', ':', ':'
+  ':', ':', ':', ':', ':',
+  /* Wild Edition */
+  '&', '!', '!', '!', '*', '[', '[', '[', '[', '[', '*', '*', '*', '*', '*', '*', '&'
 };
 
 int objtilelist[OCOUNT] =
@@ -95,7 +97,9 @@ int objtilelist[OCOUNT] =
   /* Misc */
   143, 146, 147,
   /* Drugs */
-  156, 157, 158, 159, 160
+  156, 157, 158, 159, 160,
+  /* Wild Edition (tools/tiles/src) */
+  368, 369, 370, 371, 372, 373, 374, 375, 376, 377, 378, 379, 380, 381, 382, 383, 388
 };
 
 /*
@@ -216,5 +220,23 @@ char *objectname[OCOUNT] =
 "some hashish",
 "some magic mushrooms",
 "some cocaine",
+/* Wild Edition */
+"a humming vending machine",
+"a can of Fizz",
+"a slice of pizza",
+"an energy drink",
+"a rubber duck",
+"a traffic cone",
+"a propeller beanie",
+"a pointy wizard hat",
+"a party hat",
+"a tinfoil hat",
+"a mysterious egg",
+"a fishing rod",
+"a fish",
+"an old boot",
+"a message in a bottle",
+"a cassette tape",
+"a LarnCoin ATM",
 };
 

@@ -738,7 +738,8 @@ void show3 (int index)
 
     default:
       Printf("\n%c)   %s", index+'a', objectname[(int) iven[index]]);
-      show_plusses(ivenarg[index]);
+      /* Wild Edition objects have no enchantment to show */
+      if (iven[index] < OWILD_FIRST) show_plusses(ivenarg[index]);
       break;
   }
 

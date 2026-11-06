@@ -39,6 +39,7 @@
 #include "sphere.h"
 #include "show.h"
 #include "scores.h"
+#include "wild.h"
 
 /* =============================================================================
  * Local variables
@@ -1129,6 +1130,7 @@ void endgame(void)
  */
 void died(DiedReasonType Reason, int Monster)
 {
+  wild_died(Reason == DIED_WINNER);   /* Wild Edition: tell the app */
   int win;
   int can_revive;
   long score;

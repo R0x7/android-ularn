@@ -82,6 +82,7 @@
 #include "saveutils.h"
 #include "scores.h"
 #include "player.h"
+#include "wild.h"
 #include "monster.h"
 #include "dungeon.h"
 #include "dungeon_obj.h"
@@ -792,6 +793,7 @@ void raiseexperience (long x)
   {
     tmp = (c[CONSTITUTION]-c[HARDGAME])>>1;
     c[LEVEL]++;
+    wild_level_up((int) c[LEVEL]);   /* Wild Edition */
     raisemhp((int)(rnd(3)+rnd((tmp>0)?tmp:1)));
     raisemspells((int)rund(3));
     if (c[LEVEL] < 7-c[HARDGAME])
@@ -879,6 +881,7 @@ void loseexperience (long x)
  */
 void losehp (DiedReasonType Reason, int x)
 {
+  wild_player_hit(x);   /* Wild Edition (may adjust c[HP] first, e.g. Second Wind) */
   if ((c[HP] -= x) <= 0)
   {
     UlarnBeep();
@@ -1197,6 +1200,7 @@ int take (int itm, int arg)
     need_recalc = 0;
     iven[slot] = (char) itm;
     ivenarg[slot] = (short) arg;
+    wild_take(itm, arg);   /* Wild Edition */
     switch (itm)
     {
       case OPROTRING:

@@ -38,6 +38,11 @@ class GameState(private val shared: ByteBuffer, layout: IntArray) {
         // danger cues / stats
         const val RUN_ID = 58; const val KILLS = 59; const val END_STATE = 60
         const val END_SCORE = 61; const val END_REASON = 62
+        // Wild Edition (shared_state.h, wild_paint())
+        const val WILD_FLAGS = 63; const val HAT_TILE = 64; const val GLITCH = 65; const val WEATHER = 66
+        const val COIN_PRICE = 67; const val PET_X = 68; const val PET_Y = 69
+        const val KILL_COUNTS = 70; const val KILL_COUNTS_N = 71
+        const val EV_SEQ = 72; const val EV = 73; const val EVENTS_N = 74
     }
 
     private val off = layout
@@ -98,6 +103,31 @@ class GameState(private val shared: ByteBuffer, layout: IntArray) {
     val endState get() = i(F.END_STATE)
     val endScore get() = i(F.END_SCORE)
     val endReason: String get() = cString(off[F.END_REASON], lineLen + 1).trim()
+
+    // ---- Wild Edition ----
+    /** Low 16 bits: feature mask (Settings.WILDF_*); high 16 bits: perk bits. */
+    val wildFlags get() = i(F.WILD_FLAGS)
+    fun wildOn(bit: Int) = (wildFlags and bit) != 0
+    val perkBits get() = (wildFlags ushr 16) and 0xffff
+    /** Overlay tile to draw on the player (a hat), 0 = none. */
+    val hatTile get() = i(F.HAT_TILE)
+    /** Turns of glitch left; 0 = reality is fine. */
+    val glitch get() = i(F.GLITCH)
+    /** Surface weather: hour (0-23) in the low byte, weather state in the next. */
+    val weatherHour get() = i(F.WEATHER) and 0xff
+    val weatherState get() = (i(F.WEATHER) ushr 8) and 0xff
+    val coinPrice get() = i(F.COIN_PRICE)
+    /** The pet's cell on this level, or -1. */
+    val petX get() = i(F.PET_X)
+    val petY get() = i(F.PET_Y)
+    val killCountSlots get() = off[F.KILL_COUNTS_N]
+    /** Monsters of species [monst] this character has killed (saved with the game). */
+    fun killCount(monst: Int): Int =
+        if (monst in 0 until killCountSlots) buf.getInt(off[F.KILL_COUNTS] + 4 * monst) else 0
+    /** Event ring (see GameEvents): the live sequence number and one entry. */
+    val eventSlots get() = off[F.EVENTS_N]
+    fun liveEventSeq(): Int = live.getInt(off[F.EV_SEQ])
+    fun liveEvent(index: Int, field: Int): Int = live.getInt(off[F.EV] + 16 * (index and (eventSlots - 1)) + 4 * field)
 
     /** STR (with bonus), INT, WIS, CON, DEX, CHA. */
     fun stat(i: Int): Int = buf.getInt(off[F.STATS] + 4 * i)

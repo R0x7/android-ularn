@@ -48,7 +48,10 @@
 
 #include "dungeon.h"
 
-#define MAXMONST 57   /* maximum # monsters in the dungeon  */
+/* Highest ordinary (non-demon) monster + 1: genocide, mimic disguises and
+ * random generation stop here. Wild Edition inserts monsters before DEMONLORD,
+ * so this follows the enum instead of being a fixed 57. MAXMONST + 8 == LUCIFER. */
+#define MAXMONST DEMONLORD
 
 struct monst {
   char  *name;
@@ -137,6 +140,12 @@ typedef enum
   PLATINUMDRAGON,
   GREENURCHIN,
   REDDRAGON,
+  /* Wild Edition monsters (compat/wild.h). Never generated at random
+   * (monstlevel[] stops at REDDRAGON); features spawn them. */
+  NULLPOINTER,
+  FOUNTAINKRAKEN,
+  TAXAUDITOR,
+  ROOMBA,
   DEMONLORD,
   DEMONLORD_II,
   DEMONLORD_III,

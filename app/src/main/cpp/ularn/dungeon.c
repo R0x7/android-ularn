@@ -50,6 +50,7 @@
 #include "ularn_win.h"
 #include "header.h"
 #include "dungeon.h"
+#include "wild.h"
 #include "monster.h"
 #include "itm.h"
 #include "player.h"
@@ -1379,6 +1380,7 @@ void newcavelevel (int x)
 
   if (beenhere[level])
   {
+    wild_leaving_level(level);   /* Wild Edition: pets follow, etc. */
     savelevel();  /* put the level back into storage  */
   }
 
@@ -1455,7 +1457,11 @@ void newcavelevel (int x)
     /* Position the player on the map */
     positionplayer();
 
+    wild_make_level(x);   /* Wild Edition: place its own objects/monsters */
   }
+
+  wild_new_level(x);      /* Wild Edition */
+  wild_event(US_EV_NEW_LEVEL, x, 0, 0);
 }
 
 /* =============================================================================

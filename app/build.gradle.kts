@@ -8,14 +8,20 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.ularn.android"
+        // Wild Edition installs beside the normal Ularn app (own saves, own icon).
+        applicationId = "com.ularn.android.wild"
         minSdk = 24
         targetSdk = 35
-        versionCode = 4
-        versionName = "2.2 (Ularn 1.6.3a)"
+        versionCode = 100
+        versionName = "3.0-wild (Ularn 1.6.3a)"
 
         ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+            // -Pularn.abis=x86_64 (comma-separated) limits a local build to
+            // fewer ABIs: the NDK build is the slow part.
+            val abis = (project.findProperty("ularn.abis") as String?)
+                ?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
+                ?: listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+            abiFilters += abis
         }
         externalNativeBuild {
             cmake {

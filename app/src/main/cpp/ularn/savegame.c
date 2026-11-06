@@ -21,6 +21,8 @@
 
 #include <stdio.h>
 #include <fcntl.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "header.h"
 #include "savegame.h"
@@ -35,6 +37,7 @@
 #include "store.h"
 #include "scores.h"
 #include "itm.h"
+#include "wild.h"
 
 /* =============================================================================
  * Local functions
@@ -165,11 +168,19 @@ int savegame(char *fname)
 
   FileSum = 0;
 
+  /* Wild Edition: header so other versions refuse the file cleanly */
+  bwrite(fp, WILD_SAVE_MAGIC, WILD_SAVE_MAGIC_LEN);
+  {
+    int32_t ver = WILD_SAVE_VERSION;
+    bwrite(fp, (char *) &ver, sizeof ver);
+  }
+
   write_player(fp);
   write_levels(fp);
   write_store(fp);
   write_monster_data(fp);
   write_spheres(fp);
+  wild_save(fp);   /* Wild Edition trailer */
 
   /* file sum */
   bwrite(fp, (char *) &FileSum, sizeof(FileSum));
@@ -208,11 +219,32 @@ void restoregame(char *fname)
 
   FileSum = 0;
 
+  /* Wild Edition: a save without our header is from another version. */
+  {
+    char magic[WILD_SAVE_MAGIC_LEN];
+    int32_t ver = 0;
+    memset(magic, 0, sizeof magic);
+    bread(fp, magic, WILD_SAVE_MAGIC_LEN);
+    bread(fp, (char *) &ver, sizeof ver);
+    if (memcmp(magic, WILD_SAVE_MAGIC, WILD_SAVE_MAGIC_LEN) != 0 || ver != WILD_SAVE_VERSION)
+    {
+      fclose(fp);
+      unlink(fname);
+      Print("\nThat saved game is from a different version of Ularn and can't be loaded.\n");
+      Print("It has been removed. Please start a new game.\n");
+      nap(4000);
+      c[GOLD] = c[BANKACCOUNT] = 0;
+      died(DIED_OLD_SAVE_FILE, 0);
+      return;
+    }
+  }
+
   read_player(fp);
   read_levels(fp);
   read_store(fp);
   read_monster_data(fp);
   read_spheres(fp);
+  if (wild_restore(fp) != 0) fsorry();   /* Wild Edition trailer */
 
   /* sum of everything so far */
   thesum = FileSum;

@@ -110,7 +110,45 @@ class Settings(context: Context) {
         get() = p.getBoolean("achToasts", true)
         set(v) = p.edit().putBoolean("achToasts", v).apply()
 
+    // ---- Wild Edition ----
+    /** Feature mask passed to the game as ULARN_WILD (WILDF_* bits); default all on. */
+    var wildFlags: Int
+        get() = p.getInt("wildFlags", WILDF_ALL)
+        set(v) = p.edit().putInt("wildFlags", v and WILDF_ALL).apply()
+
+    fun wild(bit: Int) = (wildFlags and bit) != 0
+    fun setWild(bit: Int, on: Boolean) { wildFlags = if (on) wildFlags or bit else wildFlags and bit.inv() }
+
     companion object {
+        // Feature bits: keep in sync with compat/wild.h (WILDF_*).
+        const val WILDF_RADIO = 1 shl 0
+        const val WILDF_CARDS = 1 shl 1
+        const val WILDF_VENDING = 1 shl 2
+        const val WILDF_HATS = 1 shl 3
+        const val WILDF_COIN = 1 shl 4
+        const val WILDF_GLITCH = 1 shl 5
+        const val WILDF_FISHING = 1 shl 6
+        const val WILDF_PETS = 1 shl 7
+        const val WILDF_PERKS = 1 shl 8
+        const val WILDF_WEATHER = 1 shl 9
+        const val WILDF_PHOTO = 1 shl 10
+        const val WILDF_ALL = 0x7ff
+
+        /** Checkbox labels for the Settings "Wild features" section, in bit order. */
+        val WILD_FEATURES = listOf(
+            WILDF_RADIO to "Dungeon Radio: chiptune music and sound effects",
+            WILDF_CARDS to "Monster trading cards drop from kills",
+            WILDF_VENDING to "Vending machines, junk food, the rubber duck and the Roomba",
+            WILDF_HATS to "Hats",
+            WILDF_COIN to "LarnCoin at the bank (and the Tax Auditor)",
+            WILDF_GLITCH to "The Glitch Realm (scroll of segfault)",
+            WILDF_FISHING to "Fishing at fountains",
+            WILDF_PETS to "Mysterious eggs hatch into pets",
+            WILDF_PERKS to "Choose a perk on every level-up",
+            WILDF_WEATHER to "Weather and day/night on the surface",
+            WILDF_PHOTO to "Polaroid photo mode",
+        )
+
         /** Rotation choices: label to ActivityInfo.screenOrientation. */
         val ORIENTATIONS = listOf(
             "Follow system rotation setting" to android.content.pm.ActivityInfo.SCREEN_ORIENTATION_FULL_USER,

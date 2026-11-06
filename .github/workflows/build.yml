@@ -42,6 +42,29 @@ jobs:
           name: ularn-debug-apk
           path: ularn.apk
 
+      # Wild Edition branch: every push updates one prerelease, so this link always
+      # gets the newest experimental build:
+      # https://github.com/<owner>/<repo>/releases/download/wild-latest/ularn-wild.apk
+      - name: Publish Wild Edition prerelease
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/claude/wonderful-edison-1g02v3'
+        run: cp ularn.apk ularn-wild.apk
+      - uses: softprops/action-gh-release@v2
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/claude/wonderful-edison-1g02v3'
+        with:
+          tag_name: wild-latest
+          name: Ularn Wild Edition (experimental, build ${{ github.run_number }})
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          make_latest: false
+          files: ularn-wild.apk
+          body: |
+            **Experimental.** Installs beside the normal Ularn app as "Ularn Wild" with its own saves.
+            What's in it: docs/WILD_EDITION_PLAN.md and docs/wild/*.md on the branch.
+
+            Always-newest link: https://github.com/${{ github.repository }}/releases/download/wild-latest/ularn-wild.apk
+
+            Commit: ${{ github.sha }}
+
       # Every push to main becomes a release, so this link always gets the newest build:
       # https://github.com/<owner>/<repo>/releases/latest/download/ularn.apk
       - name: Publish release

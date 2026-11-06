@@ -37,6 +37,7 @@ import com.ularn.android.controls.ControlType
 import com.ularn.android.controls.ControlsOverlay
 import com.ularn.android.controls.LayoutStore
 import com.ularn.android.game.ContextAction
+import com.ularn.android.game.GameEvents
 import com.ularn.android.game.GameView
 import com.ularn.android.game.SidePanelController
 import com.ularn.android.game.KeyFollowUp
@@ -56,6 +57,8 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
     private lateinit var contextAction: ContextAction
     private lateinit var spellPicker: SpellPicker
     private lateinit var tracker: RunTracker
+    /** Wild Edition event bus; features register listeners here. */
+    lateinit var events: GameEvents
     private lateinit var slotsUi: SlotsController
     private lateinit var a11yPrefs: AccessibilityPrefs
     private lateinit var announcer: MessageAnnouncer
@@ -111,10 +114,11 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
 
         session = GameSession(
             this,
-            onChanged = { game.postInvalidateOnAnimation(); sidePanel?.changed(); contextAction.onGameChanged(); announcer.onStateChanged() },
+            onChanged = { game.postInvalidateOnAnimation(); sidePanel?.changed(); contextAction.onGameChanged(); announcer.onStateChanged(); events.poll() },
             onExit = { onGameExit() },
         )
         game.state = session.state
+        events = GameEvents { session.state }   // Wild Edition: C-side events (sound, cards...)
         val followUp = KeyFollowUp({ session.state }) { if (session.isRunning) session.send(it) }
         contextAction = ContextAction({ session.state }, { session.isRunning }, followUp) { overlay.contextUi = it }
         spellPicker = SpellPicker(this, { session.state }, { session.isRunning }, followUp) { if (session.isRunning) session.send(it) }
@@ -676,6 +680,9 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
 
         header("Keyboard")
         check("Arrow keys / numpad move (hardware keyboard)", settings.arrowsAsMoves) { settings.arrowsAsMoves = it }
+
+        header("Wild features (new games start with these; a saved game keeps its own)")
+        for ((bit, label) in Settings.WILD_FEATURES) check(label, settings.wild(bit)) { settings.setWild(bit, it) }
         CueSettings.addTo(this, box, settings)
 
         AccessibilitySettingsUi.addTo(box, a11yPrefs) { applyA11y() }

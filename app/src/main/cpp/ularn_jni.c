@@ -142,6 +142,19 @@ Java_com_ularn_android_NativeBridge_layout(JNIEnv *env, jclass cls)
         offsetof(UlarnShared, end_state),
         offsetof(UlarnShared, end_score),
         offsetof(UlarnShared, end_reason),
+        /* Wild Edition */
+        offsetof(UlarnShared, wild_flags),
+        offsetof(UlarnShared, hat_tile),
+        offsetof(UlarnShared, glitch),
+        offsetof(UlarnShared, weather),
+        offsetof(UlarnShared, coin_price),
+        offsetof(UlarnShared, pet_x),
+        offsetof(UlarnShared, pet_y),
+        offsetof(UlarnShared, kill_counts),
+        US_KILL_COUNTS,
+        offsetof(UlarnShared, ev_seq),
+        offsetof(UlarnShared, ev),
+        US_EVENTS,
     };
     jintArray out;
     (void)cls;

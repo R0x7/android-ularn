@@ -15,7 +15,7 @@
 #include <stdint.h>
 
 #define US_MAGIC    0x554C524E   /* 'ULRN' */
-#define US_VERSION  1
+#define US_VERSION  2            /* 2 = Wild Edition fields */
 
 #define US_MAP_W    67           /* MAXX */
 #define US_MAP_H    17           /* MAXY */
@@ -158,7 +158,45 @@ typedef struct UlarnShared
   int32_t end_state;            /* US_END_*: set when the final score shows */
   int32_t end_score;
   char    end_reason[US_LINE_LEN + 1];  /* e.g. "killed by a giant ant on 3" */
+
+  /* ---- Wild Edition (compat/wild.c: wild_paint(), wild_event()) ---- */
+#define US_KILL_COUNTS 96          /* >= MONST_COUNT */
+#define US_EVENTS      64          /* ring size, power of two */
+  int32_t wild_flags;           /* low 16: feature mask; high 16: perk bits */
+  int32_t hat_tile;             /* overlay tile drawn on the player, 0 = none */
+  int32_t glitch;               /* turns of glitch left (0 = reality is fine) */
+  int32_t weather;              /* hour (0-23) | weather state << 8 */
+  int32_t coin_price;           /* LarnCoin price in gold */
+  int32_t pet_x, pet_y;         /* the pet's cell, -1 = none on this level */
+  int32_t kill_counts[US_KILL_COUNTS];
+  /* Event ring: ev[seq & (US_EVENTS-1)] = {type, a, b, c}; the app keeps the
+   * last seq it consumed and reads forward. US_EV_* types below. */
+  volatile int32_t ev_seq;
+  int32_t ev[US_EVENTS][4];
 } UlarnShared;
+
+/* event types (a, b, c are per type) */
+#define US_EV_NONE        0
+#define US_EV_KILL        1   /* a = monster id, b/c = cell */
+#define US_EV_LEVEL_UP    2   /* a = new character level */
+#define US_EV_NEW_LEVEL   3   /* a = dungeon level index */
+#define US_EV_TAKE        4   /* a = object id, b = arg */
+#define US_EV_PLAYER_HIT  5   /* a = damage */
+#define US_EV_GOLD        6   /* a = amount */
+#define US_EV_SPELL       7   /* a = spell id */
+#define US_EV_DIED        8
+#define US_EV_WON         9
+/* feature-specific events: 100 + 10 * feature index */
+#define US_EV_WILD_RADIO    100  /* a = track unlocked */
+#define US_EV_WILD_CARD     110  /* a = monster id, b = holo */
+#define US_EV_WILD_VENDING  120  /* a = 0 buy, 1 kick, 2 topple, 3 roomba ate */
+#define US_EV_WILD_HAT      130  /* a = hat object id or 0 (taken off) */
+#define US_EV_WILD_COIN     140  /* a = 0 tick, 1 news, 2 rug pull, 3 auditor */
+#define US_EV_WILD_GLITCH   150  /* a = 1 start, 0 end */
+#define US_EV_WILD_FISHING  160  /* a = 0 cast, 1 catch (b = object), 2 kraken */
+#define US_EV_WILD_PET      170  /* a = 0 hatch, 1 attack, 2 died, 3 follow */
+#define US_EV_WILD_PERK     180  /* a = perk index chosen */
+#define US_EV_WILD_WEATHER  190  /* a = new weather state, b = hour */
 
 /* end_state */
 #define US_END_NONE 0

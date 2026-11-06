@@ -42,6 +42,7 @@
 #include "scroll.h"
 #include "show.h"
 #include "fortune.h"
+#include "wild.h"
 
 /* =============================================================================
  * Local variables
@@ -202,6 +203,16 @@ static int whatitem (UseType Use)
         break;
       default:
         ItemUse = USE_DROP;
+        if (iven[j] >= OWILD_FIRST)   /* Wild Edition objects */
+        {
+          switch (wild_item_use(iven[j]))
+          {
+            case WILD_USE_READ: ItemUse = USE_READ; break;
+            case WILD_USE_WEAR: ItemUse = USE_WEAR; break;
+            case WILD_USE_EAT:  ItemUse = USE_EAT;  break;
+            default: break;
+          }
+        }
         break;
     }
 
@@ -421,6 +432,7 @@ void wear (void)
           return;
 
         default:
+          if (wild_wear(it)) return;   /* Wild Edition: hats */
           Print("\nYou can't wear that!");
       }
     }
@@ -561,6 +573,7 @@ void readscr (void)
           ydhi(i);
           return;
         }
+        if (wild_read(i-'a')) return;   /* Wild Edition */
         Print("\nThere's nothing on it to read.");  return;
       }
     }
@@ -611,6 +624,7 @@ void eatcookie (void)
       }
       else
       {
+        if (wild_eat(i-'a')) return;   /* Wild Edition */
         Print("\nYou can't eat that!");
         return;
       }

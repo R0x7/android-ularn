@@ -24,6 +24,7 @@
 #include "ularn_win.h"
 #include "header.h"
 #include "object.h"
+#include "wild.h"
 #include "player.h"
 #include "monster.h"
 #include "itm.h"
@@ -318,6 +319,7 @@ void ogold(int arg)
 
   Printf("\nYou find %d gold piece%s.", i, plural(i));
   c[GOLD] += i;
+  wild_gold(i);   /* Wild Edition */
   UpdateStatus();
 
   /* destroy gold */
@@ -1263,9 +1265,17 @@ void lookforobject(void)
       break;
 
     default:
-      finditem(i);
+      if (i >= OWILD_FIRST) wild_object(i);   /* Wild Edition objects */
+      else finditem(i);
       break;
   }
+}
+
+/* Wild Edition: the generic "You have found <item>. (t)ake / (i)gnore" prompt
+ * for features whose objects behave like ordinary items. */
+void wild_finditem(int itm)
+{
+  finditem(itm);
 }
 
 

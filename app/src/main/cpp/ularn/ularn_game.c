@@ -181,8 +181,12 @@ static char *OptionString[OPTION_COUNT] =
  */
 void newgame(void)
 {
+  const char *seed;
   time(&initialtime);
   srand((unsigned)initialtime);
+  /* Wild Edition test harness: ULARN_SEED makes a run reproducible. */
+  seed = getenv("ULARN_SEED");
+  if (seed != NULL && *seed != 0) srand((unsigned) strtoul(seed, NULL, 10));
 }
 
 

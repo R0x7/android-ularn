@@ -27,6 +27,7 @@
 
 #include "ularn_game.h"
 #include "ularn_win.h"
+#include "wild.h"
 #include "ularn_ask.h"
 #include "getopt.h"
 #include "savegame.h"
@@ -309,6 +310,9 @@ void ULarnSetup(int argc, char *argv[])
   /* read the options file if there is one */
   read_options();
 
+  /* Wild Edition: feature mask from the environment (docs/WILD_EDITION_PLAN.md) */
+  wild_init();
+
   /*
    * Process scorefile initialisation
    */
@@ -415,6 +419,7 @@ void ULarnSetup(int argc, char *argv[])
   {
     /* make the character that will play */
     makeplayer();
+    wild_new_character();
     /* make the dungeon */
     newcavelevel(0);
 
@@ -839,6 +844,7 @@ void parse (ActionType Action)
 
     case ACTION_REMOVE_ARMOUR:
       yrepcount=0;
+      if (wild_takeoff()) return;   /* Wild Edition: hats etc. */
 
       if (c[SHIELD] != -1)
       {
@@ -1117,6 +1123,8 @@ int main(int argc, char *argv[])
 
     /* regenerate hp and spells */
     regen();
+
+    wild_turn();   /* Wild Edition: per-turn feature logic */
 
     if (c[TIMESTOP]==0)
     {

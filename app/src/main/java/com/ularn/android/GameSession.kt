@@ -75,7 +75,9 @@ class GameSession(
         state ?: return false
         prepare(settings)
         val dir = workDir.absolutePath
-        val env = arrayOf("HOME=${home.absolutePath}", "USER=$LOGIN", "LOGNAME=$LOGIN")
+        // Wild Edition: the feature mask a *new* character starts with (a saved
+        // game keeps the mask it was created with).
+        val env = arrayOf("HOME=${home.absolutePath}", "USER=$LOGIN", "LOGNAME=$LOGIN", "ULARN_WILD=${settings.wildFlags}")
         val r = NativeBridge.spawn(dir, (listOf("ularn") + args).toTypedArray(), env)
         if (r[0] != 0) {
             Log.e(TAG, "spawn failed: errno ${-r[0]}")

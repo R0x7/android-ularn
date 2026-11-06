@@ -29,6 +29,7 @@
 #include "savegame.h"
 #include "../shared_state.h"
 #include "ularn_android_panel.h"
+#include "wild.h"
 
 /* Wiring, set up by spawn.c in the child before ularn_main() runs. */
 UlarnShared *ularn_shared = NULL;
@@ -392,7 +393,14 @@ static void set_tile(int x, int y)
   GetTile(x, y, &t);
   S->tiles[y][x] = (int16_t) t;
   S->overlay[y][x] = -1;
-  android_panel_cell(S, x, y, t);
+  /* A monster is "displayed" when GetTile() chose its tile (Wild Edition
+   * monsters have tiles >= 384, so the panel can't go by tile range). */
+  {
+    int m = mitem[x][y].mon;
+    int shown = m != MONST_NONE && !(x == playerx && y == playery) &&
+                (t == monsttilelist[m] || (m == MIMIC && t == monsttilelist[mimicmonst]));
+    android_panel_cell(S, x, y, shown);
+  }
 }
 
 /* Recompute every tile from game state (cheap: 67x17). */
@@ -405,6 +413,7 @@ static void PaintMap(void)
   S->player_x = playerx;
   S->player_y = playery;
   S->player_cursor = (c[BLINDCOUNT] == 0);
+  wild_paint();   /* Wild Edition: hat, glitch, weather, pet, events... */
 }
 
 static void PaintStatus(void)
@@ -566,6 +575,8 @@ ActionType get_normal_input(void)
   {
     ch = read_key();
     if (ch == KEY_CHECKPOINT) { checkpoint(); continue; }
+    /* Wild Edition test aid: in wizard mode '=' opens the debug menu. */
+    if (ch == '=' && wizard) { clear_input_mode(); Event = wild_debug(); if (Event == ACTION_NULL) set_input_mode(US_INPUT_COMMAND, NULL, 0); continue; }
     if (ch < 128) Event = KeyAction[ch];
 
     if (!enhance_interface &&

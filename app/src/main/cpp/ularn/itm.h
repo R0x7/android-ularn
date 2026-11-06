@@ -152,8 +152,30 @@ typedef enum
   OHASH,
   OSHROOMS,
   OCOKE,
+
+  /* Wild Edition objects (compat/wild.h, docs/WILD_EDITION_PLAN.md).
+   * OWILD_FIRST..OCOUNT-1 are handled by wild_object() when stepped on. */
+  OVENDING,
+  OFIZZ,
+  OPIZZA,
+  OENERGYDRINK,
+  ORUBBERDUCK,
+  OHATCONE,
+  OHATPROPELLER,
+  OHATWIZARD,
+  OHATPARTY,
+  OHATTINFOIL,
+  OEGG,
+  OFISHINGROD,
+  OFISH,
+  OOLDBOOT,
+  OBOTTLE,
+  OCASSETTE,
+  OCOINATM,
   OCOUNT
 } ObjectIdType;
+
+#define OWILD_FIRST OVENDING
 
 
 /*** How enchantment happened ***/

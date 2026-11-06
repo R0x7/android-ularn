@@ -201,6 +201,22 @@ typedef enum
   TMP2,       /* Storage for original int before Bessmann's hammer */
   UNUSED_98,
   UNUSED_99,
+  /* Wild Edition (compat/wild.h): appended so c[] keeps saving as a whole */
+  WILD_FLAGS,      /* feature mask the character was started with */
+  WILD_HAT,        /* object id of the hat being worn, 0 = none */
+  WILD_PERKS,      /* perk bits */
+  WILD_PERK_PICKS, /* level-ups with a perk still to choose */
+  WILD_EGG,        /* turns until the egg hatches, 0 = no egg */
+  WILD_PET_MON,    /* pet species, 0 = no pet */
+  WILD_PET_HP,
+  WILD_COINS,      /* LarnCoin holdings */
+  WILD_COIN_PRICE, /* gold per LarnCoin */
+  WILD_GLITCH,     /* turns of glitch left */
+  WILD_DUCK,       /* rubber duck charges */
+  WILD_WEATHER,    /* hour | weather << 8 */
+  WILD_FISH_XP,
+  WILD_CARD_LAST,
+  WILD_SPARE_A, WILD_SPARE_B, WILD_SPARE_C, WILD_SPARE_D, WILD_SPARE_E, WILD_SPARE_F,
   ATTRIBUTE_COUNT
 } AttributeType;
 
