@@ -219,13 +219,26 @@ class GameView(context: Context) : View(context) {
         onFrame?.invoke(s)
 
         buildChips(s)
-        val chipH = chipBarHeight()
+        // On the map the layout always keeps one row of answer buttons, so a
+        // prompt (stepping on a potion, "wield what?") never shrinks the map and
+        // makes it jump; a taller item grid is drawn over the map instead.
+        val onMap = s.displayMode != GameState.DISPLAY_TEXT
+        val chipH = if (onMap) chipRowH() else chipBarHeight()
         val area = RectF(content.left, content.top, content.right, content.bottom - chipH)
 
         if (s.displayMode == GameState.DISPLAY_TEXT) drawTextPage(canvas, s, area)
         else drawMapMode(canvas, s, area)
 
-        if (chips.isNotEmpty()) drawChips(canvas, RectF(content.left, content.bottom - chipH, content.right, content.bottom))
+        if (chips.isNotEmpty()) {
+            val full = chipBarHeight()
+            if (!onMap || full <= chipH) drawChips(canvas, RectF(content.left, content.bottom - chipH, content.right, content.bottom))
+            else {
+                val grid = RectF(content.left, maxOf(mapRect.top, mapRect.bottom - full), content.right, mapRect.bottom)
+                fill.color = panel
+                canvas.drawRect(grid, fill)
+                drawChips(canvas, grid)
+            }
+        }
         if (swipeActive) drawSwipe(canvas)
         weather.drawFlash(canvas, width, height)
     }
@@ -399,24 +412,22 @@ class GameView(context: Context) : View(context) {
         drawFitted(canvas, glitch.text(stats), x0, y, w, lineH, ui)
         y += lineH
 
-        // --- effects
+        // --- effects (the row is always kept so the map doesn't jump when one starts or ends)
         val active = GameState.EFFECT_NAMES.filterIndexed { i, _ -> s.effects and (1 shl i) != 0 }
-        if (active.isNotEmpty()) {
-            ui.textSize = sp(11f)
-            var cx = x0
-            val h = sp(18f)
-            for (name in active) {
-                val cw = ui.measureText(name) + dp(12f)
-                if (cx + cw > x1) break
-                fill.color = if (highContrast) Color.BLACK else Color.argb(200, 60, 50, 20)
-                canvas.drawRoundRect(cx, y + dp(1f), cx + cw, y + dp(1f) + h, h / 2, h / 2, fill)
-                hcOutline(canvas, cx, y + dp(1f), cx + cw, y + dp(1f) + h, h / 2)
-                ui.color = if (highContrast) Color.WHITE else accent
-                canvas.drawText(name, cx + dp(6f), y + dp(1f) + h / 2 - (ui.descent() + ui.ascent()) / 2, ui)
-                cx += cw + dp(4f)
-            }
-            y += h + dp(4f)
+        ui.textSize = sp(11f)
+        val h = sp(18f)
+        var cx = x0
+        for (name in active) {
+            val cw = ui.measureText(name) + dp(12f)
+            if (cx + cw > x1) break
+            fill.color = if (highContrast) Color.BLACK else Color.argb(200, 60, 50, 20)
+            canvas.drawRoundRect(cx, y + dp(1f), cx + cw, y + dp(1f) + h, h / 2, h / 2, fill)
+            hcOutline(canvas, cx, y + dp(1f), cx + cw, y + dp(1f) + h, h / 2)
+            ui.color = if (highContrast) Color.WHITE else accent
+            canvas.drawText(name, cx + dp(6f), y + dp(1f) + h / 2 - (ui.descent() + ui.ascent()) / 2, ui)
+            cx += cw + dp(4f)
         }
+        y += h + dp(4f)
         y += dp(2f)
 
         // --- messages: the game's 5x80 message lines, reflowed
