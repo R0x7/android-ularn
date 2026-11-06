@@ -367,8 +367,9 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         game.running = false
         setKeyboard(false)
         if (quitAfterExit) { finish(); return }
-        // Leave the final screen (scores, tombstone...) readable; tap for the menu.
-        toast("Tap the screen for the menu")
+        // The game has already shown its final pages (score, scoreboard) and
+        // waited for "return" on each, so go straight back to the main menu.
+        if (!overlay.editMode) showStartPanel(true)
     }
 
     // ---------------------------------------------- ControlsOverlay.Listener
