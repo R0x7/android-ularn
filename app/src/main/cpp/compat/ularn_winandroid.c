@@ -27,6 +27,7 @@
 
 #include "savegame.h"
 #include "../shared_state.h"
+#include "ularn_android_panel.h"
 
 /* Wiring, set up by spawn.c in the child before ularn_main() runs. */
 UlarnShared *ularn_shared = NULL;
@@ -180,6 +181,7 @@ static void publish(void)
   if (!S) return;
   S->cursor_x = CursorX;
   S->cursor_y = CursorY;
+  android_panel_inventory(S);
   __sync_synchronize();
   S->seq++;
   __sync_synchronize();
@@ -301,6 +303,7 @@ static void set_tile(int x, int y)
   GetTile(x, y, &t);
   S->tiles[y][x] = (int16_t) t;
   S->overlay[y][x] = -1;
+  android_panel_cell(S, x, y, t);
 }
 
 /* Recompute every tile from game state (cheap: 67x17). */

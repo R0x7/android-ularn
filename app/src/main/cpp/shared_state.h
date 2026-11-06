@@ -85,6 +85,35 @@ typedef struct UlarnShared
   uint8_t msg_fmt[US_MSG_LINES][US_LINE_LEN];
   char    text_chr[US_TEXT_LINES][US_LINE_LEN + 1];
   uint8_t text_fmt[US_TEXT_LINES][US_LINE_LEN];
+
+  /* minimap / side panel */
+  /* mm_cat: what each map square shows, for the minimap. Written together
+   * with tiles[][] (so it only ever reflects what the player can see):
+   * low 5 bits = US_MM_* terrain/landmark class, US_MM_MONSTER = a monster
+   * is displayed there. */
+#define US_MM_UNKNOWN   0
+#define US_MM_FLOOR     1
+#define US_MM_WALL      2
+#define US_MM_DOOR      3
+#define US_MM_ITEM      4
+#define US_MM_GOLD      5
+#define US_MM_UP        6   /* stairs / elevator up */
+#define US_MM_DOWN      7   /* stairs / elevator down */
+#define US_MM_VOLCANO   8   /* volcanic shaft (down) / tube (up) */
+#define US_MM_ENTRANCE  9   /* dungeon entrance */
+#define US_MM_BUILDING  10  /* shops, bank, school, home, LRS... */
+#define US_MM_FOUNTAIN  11
+#define US_MM_ALTAR     12
+#define US_MM_THRONE    13
+#define US_MM_TRAP      14  /* known traps, pits, teleporters, spheres */
+#define US_MM_FEATURE   15  /* statue, mirror */
+#define US_MM_MONSTER   0x80
+  uint8_t mm_cat[US_MAP_H][US_MAP_W];
+  /* Inventory slot a..z as the game's inventory list describes it
+   * ("" = empty slot), e.g. "dagger +1 (weapon in hand)". */
+#define US_INV_SLOTS 26
+#define US_INV_LEN   80
+  char    inv_text[US_INV_SLOTS][US_INV_LEN];
 } UlarnShared;
 
 #endif

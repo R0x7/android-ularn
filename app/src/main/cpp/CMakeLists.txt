@@ -11,7 +11,8 @@ add_library(ularn_game STATIC
         ${U}/object.c ${U}/monster.c ${U}/itm.c ${U}/help.c ${U}/getopt.c
         ${U}/fortune.c ${U}/dungeon_obj.c ${U}/dungeon.c ${U}/diag.c
         ${U}/action.c
-        compat/ularn_winandroid.c)
+        compat/ularn_winandroid.c
+        compat/ularn_android_panel.c)
 
 # Hidden visibility: the game's globals (e.g. `dirname`, `index`) share names
 # with libc functions. Exported, the dynamic linker could bind the game's own

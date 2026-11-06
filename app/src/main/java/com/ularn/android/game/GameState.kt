@@ -29,6 +29,8 @@ class GameState(private val shared: ByteBuffer, layout: IntArray) {
         const val MSG_CHR = 35; const val MSG_FMT = 36; const val TEXT_CHR = 37; const val TEXT_FMT = 38
         const val MAP_W = 39; const val MAP_H = 40; const val LINE_LEN = 41
         const val MSG_LINES = 42; const val TEXT_LINES = 43
+        // minimap / side panel
+        const val MM_CAT = 44; const val INV_TEXT = 45; const val INV_SLOTS = 46; const val INV_LEN = 47
     }
 
     private val off = layout
@@ -99,6 +101,15 @@ class GameState(private val shared: ByteBuffer, layout: IntArray) {
     fun textChar(row: Int, col: Int): Char = (snap[off[F.TEXT_CHR] + row * (lineLen + 1) + col].toInt() and 0xff).toChar()
     fun textFmt(row: Int, col: Int): Int = snap[off[F.TEXT_FMT] + row * lineLen + col].toInt() and 0xff
 
+    // minimap / side panel
+    val invSlots get() = off[F.INV_SLOTS]
+
+    /** Minimap class of a square: low 5 bits MM_*, plus [MM_MONSTER]. */
+    fun mmCat(x: Int, y: Int): Int = snap[off[F.MM_CAT] + y * mapW + x].toInt() and 0xff
+
+    /** Inventory slot [i] ('a' + i) as the game words it; "" if empty. */
+    fun invText(i: Int): String = cString(off[F.INV_TEXT] + i * off[F.INV_LEN], off[F.INV_LEN])
+
     private fun cString(at: Int, max: Int): String {
         var n = 0
         while (n < max && snap[at + n].toInt() != 0) n++
@@ -126,6 +137,15 @@ class GameState(private val shared: ByteBuffer, layout: IntArray) {
         const val FMT_INVERSE = 5
 
         const val TILE_CURSOR = 174
+
+        // Minimap classes (US_MM_* in shared_state.h)
+        const val MM_UNKNOWN = 0; const val MM_FLOOR = 1; const val MM_WALL = 2; const val MM_DOOR = 3
+        const val MM_ITEM = 4; const val MM_GOLD = 5; const val MM_UP = 6; const val MM_DOWN = 7
+        const val MM_VOLCANO = 8; const val MM_ENTRANCE = 9; const val MM_BUILDING = 10
+        const val MM_FOUNTAIN = 11; const val MM_ALTAR = 12; const val MM_THRONE = 13
+        const val MM_TRAP = 14; const val MM_FEATURE = 15
+        const val MM_CLASS_MASK = 0x1f
+        const val MM_MONSTER = 0x80
 
         val STAT_NAMES = listOf("STR", "INT", "WIS", "CON", "DEX", "CHA")
 

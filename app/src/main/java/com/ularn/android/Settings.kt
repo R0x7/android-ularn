@@ -64,6 +64,16 @@ class Settings(context: Context) {
         get() = p.getBoolean("arrows", true)
         set(v) = p.edit().putBoolean("arrows", v).apply()
 
+    /** Round minimap in a corner of the map (tap it for the whole level). */
+    var showMinimap: Boolean
+        get() = p.getBoolean("minimap", true)
+        set(v) = p.edit().putBoolean("minimap", v).apply()
+
+    /** Wide windows (tablets, foldables): stats / map / inventory panel beside the map. */
+    var sidePanel: Boolean
+        get() = p.getBoolean("sidePanel", true)
+        set(v) = p.edit().putBoolean("sidePanel", v).apply()
+
     /** Map zoom, as tile size in dp; 0 = automatic. */
     var tileDp: Float
         get() = p.getFloat("tileDp", 0f)

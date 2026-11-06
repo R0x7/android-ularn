@@ -53,6 +53,9 @@ class GameView(context: Context) : View(context) {
     var running = false
         set(v) { field = v; invalidate() }
 
+    /** Round minimap over the map; tap for the whole level. */
+    val minimap = MinimapOverlay(this)
+
     var arrowsAsMoves = true
     var tapToMove = true
     var swipeToMove = true
@@ -165,6 +168,7 @@ class GameView(context: Context) : View(context) {
         canvas.drawColor(bg)
         content.set(reserveLeft, 0f, width - reserveRight, height - reserveBottom)
         if (content.width() < dp(120f) || content.height() < dp(120f)) content.set(0f, 0f, width.toFloat(), height.toFloat())
+        minimap.beginFrame()
 
         val s = state
         if (s == null || !s.refresh() || s.seq == 0) return
@@ -465,6 +469,7 @@ class GameView(context: Context) : View(context) {
             }
         }
         canvas.restore()
+        minimap.draw(canvas, s, mapRect, originX + (s.playerX + 0.5f) * t, originY + (s.playerY + 0.5f) * t, t)
     }
 
     private fun drawTile(canvas: Canvas, id: Int) {
@@ -736,6 +741,7 @@ class GameView(context: Context) : View(context) {
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (minimap.onTouch(event)) return true
         scaleDetector.onTouchEvent(event)
         if (event.actionMasked == MotionEvent.ACTION_DOWN) pinching = false
         if (event.pointerCount > 1) pinching = true

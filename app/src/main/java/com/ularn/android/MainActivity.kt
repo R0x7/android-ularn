@@ -37,6 +37,7 @@ import com.ularn.android.controls.ControlType
 import com.ularn.android.controls.ControlsOverlay
 import com.ularn.android.controls.LayoutStore
 import com.ularn.android.game.GameView
+import com.ularn.android.game.SidePanelController
 
 class MainActivity : Activity(), ControlsOverlay.Listener {
 
@@ -56,6 +57,8 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
     private var keyboardShown = false
     private var quitAfterExit = false
     private var editBarAtTop = true
+    /** Tablet / foldable side panel (null until onCreate builds it). */
+    @Volatile private var sidePanel: SidePanelController? = null
     /** Layout snapshot taken when entering edit mode (for Cancel). */
     private var editBackup: ControlLayout? = null
 
@@ -91,7 +94,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
 
         session = GameSession(
             this,
-            onChanged = { game.postInvalidateOnAnimation() },
+            onChanged = { game.postInvalidateOnAnimation(); sidePanel?.changed() },
             onExit = { onGameExit() },
         )
         game.state = session.state
@@ -101,6 +104,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         root.addView(overlay, FrameLayout.LayoutParams(-1, -1))
         buildEditBar(root)
         buildStartPanel(root)
+        sidePanel = SidePanelController(root, listOf(game, overlay)) { session.state }
         setContentView(root)
 
         root.setOnApplyWindowInsetsListener { v, insets ->
@@ -223,6 +227,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
                     bottomTop = minOf(bottomTop, r.top)
                 }
             }
+            game.minimap.setAvoid(if (landscape) minOf(left, w * 0.3f) else 0f, if (landscape) minOf(right, w * 0.3f) else 0f)
             if (landscape) {
                 if (!settings.fitMapBesideControls) { left = 0f; right = 0f }
                 game.setReserve(minOf(left, w * 0.3f), minOf(right, w * 0.3f), 0f)
@@ -238,6 +243,8 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         game.swipeToMove = settings.swipeToMove
         game.flickToRun = settings.flickToRun
         game.tileDp = settings.tileDp
+        game.minimap.enabled = settings.showMinimap
+        sidePanel?.enabled = settings.sidePanel
         if (::overlay.isInitialized) game.haptics = overlay.layout.haptics
         if (::overlay.isInitialized) updateMapReserve()
     }
@@ -632,6 +639,8 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         check("Quick flick runs (instead of one step)", settings.flickToRun) { settings.flickToRun = it }
         check("Tap a square to step towards it (long-press to run)", settings.tapToMove) { settings.tapToMove = it }
         check("Landscape: fit the map beside the controls", settings.fitMapBesideControls) { settings.fitMapBesideControls = it }
+        check("Minimap (tap it to see the whole level)", settings.showMinimap) { settings.showMinimap = it }
+        check("Tablets / foldables: side panel with stats, map and inventory", settings.sidePanel) { settings.sidePanel = it }
         box.addView(Button(this).apply {
             text = "Reset map zoom"; isAllCaps = false
             setOnClickListener { settings.tileDp = 0f; game.tileDp = 0f; toast("Zoom reset") }
