@@ -39,6 +39,7 @@ python3 -m http.server -d web/site 8000
 | new game = new process | new game = page reload |
 | files in app storage | `/ularn` on IndexedDB (IDBFS), synced every 15 s, on save/quit and when the tab hides |
 | `GameView`, `ControlsOverlay` (Kotlin) | `game.js`, `index.html`, `style.css` |
+| `GameEvents` reads the event ring; `audio/` (Dungeon Radio) | `pollEvents()` in `game.js`; `radio.js` + `radio-synth.js` (AudioWorklet) |
 
 Shared code is not changed at all: `web_shim.h` (force-included in the web
 build only) points the front end's `read()` of the key pipe and `usleep()`
@@ -80,12 +81,37 @@ active effects, inventory and a key reference. The top bar has HP / spell
 bars and toggles for the side panel, full screen and the on-screen buttons
 (on by default only on touch screens).
 
+## Dungeon Radio
+
+The Wild Edition's chiptune music and sound effects (see
+`docs/wild/radio.md`), ported from the app's `audio/` package:
+
+* `radio.js`: the track list in its text notation, the parser, the
+  track picker (town / shallows / depths / volcano / shop, the stingers, the
+  three cassette tapes) and the controller. It is the same song data as
+  `Songs.kt`, so both versions play the same tunes.
+* `radio-synth.js`: the synthesizer (pulse, triangle and noise voices,
+  envelopes, sequencer, effects, mixer). It runs in an **AudioWorklet**,
+  off the main thread; browsers without one get a ScriptProcessorNode
+  fallback with the same code.
+* The game's events (`wild_event()` in `compat/wild.c`) reach the page
+  through the `ev` ring of the shared struct, read in `pollEvents()`.
+
+The audio starts from the title screen's button (browsers only play sound
+after a click), goes quiet while the tab is hidden, and the **♫** toolbar
+button opens the Radio dialog: now playing, next track, tapes, volumes, and
+the on/off switch. Tapes found and the volumes are kept in `localStorage`.
+The title screen's "Dungeon Radio" checkbox is the Wild feature bit: with
+it off, new games have no tapes either.
+
+`node web/test-radio.js` checks the notation, the song table and the synth
+(`build.sh` runs it when node is available).
+
 ## Not ported yet
 
 From the Android front end: the minimap, spell picker, context
 action button, control-layout editor, save slots, run stats, and the Wild
-Edition extras drawn by the app (chiptune radio/sounds, weather and
-day/night effects, glitch visuals, Polaroid photo mode, trading-card
-gallery). The game-side parts of the Wild features (pets, hats, vending
+Edition extras drawn by the app (weather and day/night effects, glitch
+visuals, Polaroid photo mode, trading-card gallery). The game-side parts of the Wild features (pets, hats, vending
 machines, LarnCoin, fishing, perks...) all work, since they live in the C
 code.

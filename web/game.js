@@ -8,6 +8,7 @@
 'use strict';
 
 const WILD_ALL = 0x7ff;
+const WILDF_RADIO = 1;   // Wild feature bit: Dungeon Radio (tapes in the dungeon, see compat/wild.h)
 const TILE_SRC = 32, ATLAS_COLS = 16;
 const TILE_CURSOR = 174, TILE_PET_HEART = 397;
 const SAVE = '/ularn/home/ularn_player.sav';
@@ -45,6 +46,8 @@ var Module = {
   onGameExit(status) {
     running = false;
     render(true);
+    pollEvents();
+    Radio.onGameExit();
     checkEnd();
     syncSave(() => {
       const end = i32(L.end_state);
@@ -89,6 +92,7 @@ function showTitle() {
   $('name').value = store.get('name', 'Adventurer');
   $('gender').value = store.get('gender', 'female');
   $('wild').checked = store.get('wild', true);
+  $('radio').checked = Radio.enabled;
   $('skipintro').checked = store.get('skipIntro', true);
   $('continue').hidden = !exists(SAVE);
   $('checkpoint').hidden = exists(SAVE) || !exists(CKP);
@@ -130,6 +134,9 @@ function start(mode) {
   const name = ($('name').value.replace(/[,:\r\n]/g, ' ').trim().slice(0, 30)) || 'Adventurer';
   const gender = $('gender').value, wild = $('wild').checked, skip = $('skipintro').checked;
   store.set('name', name); store.set('gender', gender); store.set('wild', wild); store.set('skipIntro', skip);
+  Radio.enabled = $('radio').checked;
+  // The radio is a Wild feature: with it off the dungeon also has no tapes.
+  const wildMask = wild ? (Radio.enabled ? WILD_ALL : WILD_ALL & ~WILDF_RADIO) : 0;
   const FS = Module.FS;
   if (mode === 'new') { for (const p of [SAVE, CKP]) if (exists(p)) FS.unlink(p); }
   const opts = ['name:' + name, 'gender:' + gender, 'noenhanced_interface'];
@@ -142,7 +149,11 @@ function start(mode) {
   document.body.classList.add('playing');
   $('game').hidden = false;
   running = true;
-  Module.ccall('ularn_web_run', null, ['number', 'number'], [wild ? WILD_ALL : 0, mode === 'ckp' ? 1 : 0], { async: true });
+  evSeq = 0;
+  // Dungeon Radio needs this click: browsers only play sound after a gesture.
+  $('t-radio').hidden = !wild;
+  if (wild) Radio.start();
+  Module.ccall('ularn_web_run', null, ['number', 'number'], [wildMask, mode === 'ckp' ? 1 : 0], { async: true });
   requestAnimationFrame(frame);
   setInterval(() => { if (running) syncSave(); }, 15000);
 }
@@ -240,6 +251,12 @@ function wireControls() {
     else document.documentElement.requestFullscreen().catch(() => {});
   });
   if (!document.documentElement.requestFullscreen) $('t-full').hidden = true;
+  $('t-radio').addEventListener('click', () => Radio.showDialog());
+  Radio.wireDialog();
+  Radio.onChange = (s) => {
+    $('t-radio-name').textContent = s ? s.name : 'Radio';
+    $('t-radio').title = 'Dungeon Radio' + (s ? ': now playing ' + s.name : '');
+  };
   document.addEventListener('fullscreenchange', syncTools);
   syncTools();
   new ResizeObserver(() => { if (running && L) render(); }).observe($('playcol'));
@@ -253,7 +270,11 @@ function wireControls() {
   $('checkpoint').addEventListener('click', () => start('ckp'));
   $('again').addEventListener('click', () => location.reload());
   window.addEventListener('pagehide', () => { if (running) syncSave(); });
-  document.addEventListener('visibilitychange', () => { if (document.hidden && running) syncSave(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && running) syncSave();
+    // The radio goes quiet while the tab is in the background.
+    if (document.hidden) Radio.pause(); else Radio.resume();
+  });
 }
 
 // ---------------------------------------------------------------- drawing
@@ -262,9 +283,50 @@ let view = null;
 function frame() {
   if (L && running) {
     const seq = i32(L.seq);
-    if (seq !== lastSeq) { lastSeq = seq; render(); checkEnd(); }
+    if (seq !== lastSeq) { lastSeq = seq; render(); pollEvents(); Radio.update(radioScene()); checkEnd(); }
   }
   if (running) requestAnimationFrame(frame);
+}
+
+// ---------------------------------------------------------------- events
+/* Wild Edition game events (wild_event() in compat/wild.c): the game appends
+ * {type, a, b, c} to a ring in the shared struct and bumps ev_seq; this reads
+ * everything since the last call. The web counterpart of GameEvents.kt. They
+ * only drive the radio, so a lost race just drops a blip. */
+let evSeq = 0;
+
+function pollEvents() {
+  const seq = i32(L.ev_seq), n = L.events;
+  if (seq < evSeq) { evSeq = seq; return; }      // a new game: ring reset
+  let from = evSeq;
+  if (seq - from > n) from = seq - n;            // too far behind: only the last ring's worth is intact
+  for (let i = from; i < seq; i++) {
+    const o = L.ev + 16 * (i & (n - 1));
+    Radio.onEvent(i32(o), i32(o + 4), i32(o + 8), i32(o + 12));
+  }
+  evSeq = seq;
+}
+
+/* What the music cares about (see TrackPicker in radio.js): the level, a
+ * store's or the bank's text page, a demon lord in sight, the game's end. */
+const DEMON_LORD_TILES = [56, 63];   // demon lords and the Demon Prince
+
+function radioScene() {
+  const text = i32(L.display_mode) === 1;
+  let shop = false, bank = false, boss = false;
+  if (text) {
+    let page = '';
+    for (let y = 0; y < L.text_lines; y++) page += str(L.text_chr + y * (L.line + 1), L.line) + '\n';
+    bank = page.includes(Radio.TrackPicker.BANK_WORDS);
+    shop = Radio.TrackPicker.SHOP_WORDS.some((w) => page.includes(w));
+  } else {
+    const n = L.map_w * L.map_h;
+    for (let i = 0; i < n; i++) {
+      const t = i16(L.tiles + 2 * i);
+      if (t >= DEMON_LORD_TILES[0] && t <= DEMON_LORD_TILES[1]) { boss = true; break; }
+    }
+  }
+  return { dlevel: i32(L.dlevel), textPage: text, shopText: shop, bankText: bank, bossVisible: boss, endState: i32(L.end_state) };
 }
 
 function esc(c) { return c === '<' ? '&lt;' : c === '>' ? '&gt;' : c === '&' ? '&amp;' : c; }

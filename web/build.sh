@@ -18,6 +18,8 @@ for f in $SRCS; do
   emcc $CFLAGS -include $CPP/compat/android_shim.h -include web_shim.h -I$CPP/compat -I$CPP/ularn -I$CPP -c "$f" -o "obj/$(basename "$f" .c).o"
 done
 emcc -O2 -I$CPP -c web_main.c -o obj/web_main.o
+# Dungeon Radio's song table and synth are plain JS: check them when node is around.
+if command -v node >/dev/null 2>&1; then node test-radio.js; fi
 
 emcc -O2 obj/*.o -o $OUT/ularn.js \
   -sASYNCIFY=1 -sASYNCIFY_STACK_SIZE=65536 \
@@ -26,7 +28,7 @@ emcc -O2 obj/*.o -o $OUT/ularn.js \
   -sEXPORTED_FUNCTIONS=_ularn_web_push_key,_ularn_web_state,_ularn_web_layout,_ularn_web_run,_ularn_web_unranked \
   -sEXPORTED_RUNTIME_METHODS=ccall,UTF8ToString,FS \
   --preload-file $CPP/../assets/ularn@/data
-cp index.html game.js style.css leaderboard.js leaderboard-config.js $OUT/
+cp index.html game.js style.css leaderboard.js leaderboard-config.js radio.js radio-synth.js $OUT/
 cp $CPP/../assets/ularn_tiles.png $OUT/
 rm -rf obj
 echo "built web/$OUT"
