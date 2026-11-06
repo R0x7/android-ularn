@@ -558,7 +558,7 @@ class GameView(context: Context) : View(context) {
                 chips += Chip("Enter", byteArrayOf(13))
             }
             GameState.INPUT_PASSWORD -> {
-                chips += Chip("⌨ Type", null) { onToggleKeyboard?.invoke() }
+                chips += Chip("⌨ Type", null, action = { onToggleKeyboard?.invoke() })
                 chips += Chip("Enter", byteArrayOf(13))
             }
             GameState.INPUT_DIR -> chips += Chip("Swipe or press a direction", null)
