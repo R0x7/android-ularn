@@ -46,10 +46,10 @@ jobs:
       # gets the newest experimental build:
       # https://github.com/<owner>/<repo>/releases/download/wild-latest/ularn-wild.apk
       - name: Publish Wild Edition prerelease
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/claude/wonderful-edison-1g02v3'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/ularn-wild'
         run: cp ularn.apk ularn-wild.apk
       - uses: softprops/action-gh-release@v2
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/claude/wonderful-edison-1g02v3'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/ularn-wild'
         with:
           tag_name: wild-latest
           name: Ularn Wild Edition (experimental, build ${{ github.run_number }})
