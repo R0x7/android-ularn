@@ -150,6 +150,20 @@ typedef struct UlarnShared
   int32_t spell_count;          /* SPELL_COUNT */
   uint8_t spell_known[US_SPELLS];        /* spelknow[] != 0 */
   char    spell_codes[US_SPELLS][4];     /* spelcode[], e.g. "pro" */
+  /* danger cues / stats */
+  int32_t run_id;               /* random id of the current character, kept in
+                                   its save / checkpoint; 0 = no character yet */
+  int32_t kills;                /* monsters the player killed this run (also
+                                   kept in the save) */
+  int32_t end_state;            /* US_END_*: set when the final score shows */
+  int32_t end_score;
+  char    end_reason[US_LINE_LEN + 1];  /* e.g. "killed by a giant ant on 3" */
 } UlarnShared;
+
+/* end_state */
+#define US_END_NONE 0
+#define US_END_DIED 1
+#define US_END_WON  2
+#define US_END_QUIT 3
 
 #endif

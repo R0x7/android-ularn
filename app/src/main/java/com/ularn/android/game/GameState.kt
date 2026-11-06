@@ -35,6 +35,9 @@ class GameState(private val shared: ByteBuffer, layout: IntArray) {
         const val CTX_OBJECT = 48; const val CTX_KIND = 49; const val CTX_FLAGS = 50; const val CTX_DOORS = 51
         const val CTX_NAME = 52; const val SPELL_COUNT = 53; const val SPELL_KNOWN = 54; const val SPELL_CODES = 55
         const val CTX_NAME_LEN = 56; const val SPELLS_MAX = 57
+        // danger cues / stats
+        const val RUN_ID = 58; const val KILLS = 59; const val END_STATE = 60
+        const val END_SCORE = 61; const val END_REASON = 62
     }
 
     private val off = layout
@@ -84,6 +87,17 @@ class GameState(private val shared: ByteBuffer, layout: IntArray) {
     val ac get() = i(F.AC)
     val wc get() = i(F.WC)
     val exp get() = i(F.EXP)
+    val dlevel get() = i(F.DLEVEL)
+
+    // danger cues / stats
+    /** Random id of the current character (kept in its save); 0 = none yet. */
+    val runId get() = i(F.RUN_ID)
+    /** Monsters the player has killed this run. */
+    val kills get() = i(F.KILLS)
+    /** One of END_*: set when the game shows the final score. */
+    val endState get() = i(F.END_STATE)
+    val endScore get() = i(F.END_SCORE)
+    val endReason: String get() = cString(off[F.END_REASON], lineLen + 1).trim()
 
     /** STR (with bonus), INT, WIS, CON, DEX, CHA. */
     fun stat(i: Int): Int = buf.getInt(off[F.STATS] + 4 * i)
@@ -148,6 +162,11 @@ class GameState(private val shared: ByteBuffer, layout: IntArray) {
         const val FMT_STANDOUT3 = 3
         const val FMT_BOLD = 4
         const val FMT_INVERSE = 5
+
+        const val END_NONE = 0
+        const val END_DIED = 1
+        const val END_WON = 2
+        const val END_QUIT = 3
 
         const val TILE_CURSOR = 174
 

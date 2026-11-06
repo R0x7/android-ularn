@@ -63,6 +63,12 @@ class GameView(context: Context) : View(context) {
     var flickToRun = false
     var haptics = true
 
+    // danger cues / stats
+    /** Low-HP cues (HP bar pulse, vignette, vibration, hit flash). */
+    val danger = DangerCues(this)
+    /** Called once per drawn frame with fresh state (run statistics). */
+    var onFrame: ((GameState) -> Unit)? = null
+
     /** Preferred tile size in dp (0 = automatic). */
     var tileDp = 0f
         set(v) { field = v; invalidate() }
@@ -178,6 +184,8 @@ class GameView(context: Context) : View(context) {
             lastBeep = s.beepCount
         }
         if (s.displayMode != lastDisplayMode) { textPanX = 0f; lastDisplayMode = s.displayMode }
+        danger.onFrame(s, haptics)
+        onFrame?.invoke(s)
 
         buildChips(s)
         val chipH = if (chips.isEmpty()) 0f else dp(44f)
@@ -308,11 +316,11 @@ class GameView(context: Context) : View(context) {
         if (barR > barL + dp(30f)) {
             fill.color = panelLine
             canvas.drawRoundRect(barL, y + lineH / 2 - dp(4f), barR, y + lineH / 2 + dp(4f), dp(4f), dp(4f), fill)
-            fill.color = when {
+            fill.color = danger.hpBarColor(when {
                 hpFrac > 0.6f -> Color.rgb(90, 200, 110)
                 hpFrac > 0.3f -> Color.rgb(240, 190, 60)
                 else -> Color.rgb(235, 80, 70)
-            }
+            })
             canvas.drawRoundRect(barL, y + lineH / 2 - dp(4f), barL + (barR - barL) * hpFrac, y + lineH / 2 + dp(4f), dp(4f), dp(4f), fill)
         }
         y += lineH
@@ -362,6 +370,7 @@ class GameView(context: Context) : View(context) {
         // --- map between HUD and messages
         mapRect.set(area.left, y, area.right, msgTop - dp(6f))
         drawMap(canvas, s)
+        danger.drawMapOverlay(canvas, mapRect)
     }
 
     private fun drawFitted(canvas: Canvas, text: String, x: Float, top: Float, w: Float, h: Float, p: Paint) {
