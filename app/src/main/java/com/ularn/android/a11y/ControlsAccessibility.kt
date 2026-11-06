@@ -103,6 +103,7 @@ class ControlsAccessibility(private val view: ControlsOverlay) : AccessibilityNo
         ButtonAction.EDIT -> "Edit controls"
         ButtonAction.RUN -> "Run modifier"
         ButtonAction.CAST -> "Cast a spell"
+        ButtonAction.PHOTO -> "Take a photo"
         ButtonAction.CONTEXT -> view.contextUi.let { ui ->
             val what = ui.label ?: c.label.ifBlank { "Action" }
             if (ui.enabled) what else "$what, unavailable"

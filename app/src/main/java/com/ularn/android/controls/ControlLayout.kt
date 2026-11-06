@@ -15,6 +15,7 @@ enum class ButtonAction(val title: String) {
     EDIT("Edit controls"),
     CONTEXT("Context action (take, stairs, enter, open…)"),
     CAST("Cast spell (opens the spell list)"),
+    PHOTO("Take a photo (Wild Edition photo mode)"),
 }
 
 enum class ButtonShape { ROUNDED, CIRCLE }

@@ -126,6 +126,16 @@ class Settings(context: Context) {
         get() = p.getBoolean("reduceGlitch", false)
         set(v) = p.edit().putBoolean("reduceGlitch", v).apply()
 
+    /** Weather: no drifting rain / snow and no lightning flashes (the day/night tint stays). */
+    var reduceWeather: Boolean
+        get() = p.getBoolean("reduceWeather", false)
+        set(v) = p.edit().putBoolean("reduceWeather", v).apply()
+
+    /** Photo mode: snap a Polaroid by itself when the character dies or wins. */
+    var autoPhoto: Boolean
+        get() = p.getBoolean("autoPhoto", true)
+        set(v) = p.edit().putBoolean("autoPhoto", v).apply()
+
     fun wild(bit: Int) = (wildFlags and bit) != 0
     fun setWild(bit: Int, on: Boolean) { wildFlags = if (on) wildFlags or bit else wildFlags and bit.inv() }
 

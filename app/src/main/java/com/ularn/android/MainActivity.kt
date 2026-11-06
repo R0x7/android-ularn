@@ -51,6 +51,7 @@ import com.ularn.android.a11y.AccessibilitySettingsUi
 import com.ularn.android.a11y.MessageAnnouncer
 import com.ularn.android.audio.Radio
 import com.ularn.android.saves.SlotsController
+import com.ularn.android.photo.PhotoMode
 
 class MainActivity : Activity(), ControlsOverlay.Listener {
 
@@ -68,6 +69,8 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
     private lateinit var cards: CardDrops
     /** Wild Edition: Dungeon Radio (music + sound effects). */
     private lateinit var radio: Radio
+    /** Wild Edition: Polaroid photo mode. */
+    private lateinit var photos: PhotoMode
 
     private lateinit var game: GameView
     private lateinit var overlay: ControlsOverlay
@@ -127,6 +130,16 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         events = GameEvents { session.state }   // Wild Edition: C-side events (sound, cards...)
         cards = CardDrops(this, settings) { session.state?.runId ?: 0 }.also { events.addListener(it) }
         radio = Radio(this, settings, { session.state }, { session.isRunning }).also { events.addListener(it) }
+        photos = PhotoMode(this, settings, game, { session.state },
+            characterName = { com.ularn.android.photo.PolaroidMath.nameFromOpts(session.optsText) },
+            radioShutter = {
+                // The Radio's "take" blip doubles as the shutter click when it's on and audible.
+                if (settings.wild(Settings.WILDF_RADIO) && settings.radioSfxVolume > 0) {
+                    radio.onEvent(GameEvents.Event(GameEvents.TAKE, 0, 0, 0)); true
+                } else false
+            }).also { events.addListener(it) }
+        // Wild Edition weather: a lightning strike from the game flashes the screen
+        events.addListener { e -> if (e.type == GameEvents.WILD_WEATHER && e.c == 1) game.weather.flash() }
         val followUp = KeyFollowUp({ session.state }) { if (session.isRunning) session.send(it) }
         contextAction = ContextAction({ session.state }, { session.isRunning }, followUp) { overlay.contextUi = it }
         spellPicker = SpellPicker(this, { session.state }, { session.isRunning }, followUp) { if (session.isRunning) session.send(it) }
@@ -173,6 +186,11 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
             applyOrientation(newConfig)
         }
         applyA11y()   // font scale
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (!photos.onRequestPermissionsResult(requestCode, grantResults))
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
     @Deprecated("Deprecated in Java")
@@ -313,6 +331,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         if (::overlay.isInitialized) updateMapReserve()
         game.danger.apply(settings)
         game.glitch.reduce = settings.reduceGlitch
+        game.weather.reduce = settings.reduceWeather
         applyA11y()
     }
 
@@ -365,6 +384,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
             ButtonAction.EDIT -> startEditing()
             ButtonAction.CONTEXT -> contextAction.trigger()
             ButtonAction.CAST -> spellPicker.onCastButton()
+            ButtonAction.PHOTO -> if (session.isRunning) photos.takePhoto()
             else -> {}
         }
     }
@@ -647,6 +667,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         // Wild Edition entries
         if (cards.enabled) items += "Card album" to { cards.showAlbum() }
         if (settings.wild(Settings.WILDF_RADIO)) items += "Radio" to { radio.showDialog() }
+        if (photos.enabled) items += "Take a photo" to { photos.takePhoto() }
         AlertDialog.Builder(this).setItems(items.map { it.first }.toTypedArray()) { _, which ->
             items[which].second()
         }.show()
@@ -702,6 +723,8 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         for ((bit, label) in Settings.WILD_FEATURES) check(label, settings.wild(bit)) { settings.setWild(bit, it) }
         check("Card drop toasts: show each card as it drops", settings.cardToasts) { settings.cardToasts = it }
         check("Reduce glitch effects (no shaking or colour cycling)", settings.reduceGlitch) { settings.reduceGlitch = it }
+        check("Reduce weather effects (no drifting rain or snow, no lightning flashes)", settings.reduceWeather) { settings.reduceWeather = it }
+        check("Auto-photo on death / victory", settings.autoPhoto) { settings.autoPhoto = it }
         CueSettings.addTo(this, box, settings)
 
         AccessibilitySettingsUi.addTo(box, a11yPrefs) { applyA11y() }

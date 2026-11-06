@@ -68,6 +68,8 @@ class GameView(context: Context) : View(context) {
     val danger = DangerCues(this)
     /** Wild Edition: the Glitch Realm's corruption pass over the map. */
     val glitch = GlitchFx(this)
+    /** Wild Edition: weather and day/night over the surface map. */
+    val weather = WeatherFx(this)
     /** Called once per drawn frame with fresh state (run statistics). */
     var onFrame: ((GameState) -> Unit)? = null
 
@@ -212,6 +214,7 @@ class GameView(context: Context) : View(context) {
         if (s.displayMode != lastDisplayMode) { textPanX = 0f; lastDisplayMode = s.displayMode }
         danger.onFrame(s, haptics)
         glitch.onFrame(s)
+        weather.onFrame(s)
         onFrame?.invoke(s)
 
         buildChips(s)
@@ -223,6 +226,7 @@ class GameView(context: Context) : View(context) {
 
         if (chips.isNotEmpty()) drawChips(canvas, RectF(content.left, content.bottom - chipH, content.right, content.bottom))
         if (swipeActive) drawSwipe(canvas)
+        weather.drawFlash(canvas, width, height)
     }
 
     private fun drawSwipe(canvas: Canvas) {
@@ -373,6 +377,16 @@ class GameView(context: Context) : View(context) {
             canvas.drawText(ticker, x1 - tw, y + lineH / 2 - (ui.descent() + ui.ascent()) / 2, ui)
             ui.color = fgNormal
             w2 = w - tw - dp(8f)
+        }
+        // Wild Edition weather: the sun or the moon after the level name
+        val sky = weather.hudTile()
+        if (sky >= 0) {
+            ui.color = fgNormal
+            val textW = minOf(ui.measureText(glitch.text(line2)), w2 - lineH - dp(4f))
+            val ix = (x0 + textW + dp(4f)).roundToInt()
+            dstRect.set(ix, y.roundToInt(), ix + lineH.roundToInt(), (y + lineH).roundToInt())
+            drawTile(canvas, sky)
+            w2 -= lineH + dp(4f)
         }
         drawFitted(canvas, glitch.text(line2), x0, y, w2, lineH, ui)
         y += lineH
@@ -546,8 +560,18 @@ class GameView(context: Context) : View(context) {
                 if (tx == s.playerX && ty == s.playerY && s.playerCursor) drawTile(canvas, GameState.TILE_CURSOR)
             }
         }
+        // Wild Edition weather: rain / snow / stars over all the tiles, then the day/night tint
+        if (weather.active) {
+            for (ty in y0..y1) for (tx in x0..x1) {
+                dstRect.set((originX + tx * t).roundToInt(), (originY + ty * t).roundToInt(),
+                    (originX + (tx + 1) * t).roundToInt(), (originY + (ty + 1) * t).roundToInt())
+                weather.drawCell(canvas, tiles, dstRect, tx, ty, s.mmCat(tx, ty))
+            }
+        }
         glitch.end(canvas)
+        weather.drawTint(canvas, mapRect)
         canvas.restore()
+        viewX0 = x0; viewY0 = y0; viewX1 = x1; viewY1 = y1
         minimap.draw(canvas, s, mapRect, originX + (s.playerX + 0.5f) * t, originY + (s.playerY + 0.5f) * t, t)
     }
 
@@ -555,6 +579,52 @@ class GameView(context: Context) : View(context) {
         val bmp = tiles.getOrNull(id) ?: return
         canvas.drawBitmap(bmp, null, dstRect, tilePaint)
     }
+
+    // ------------------------------------------------- Wild Edition photo
+
+    /** The cells shown by the last drawMap(), for [renderMapBitmap]. */
+    private var viewX0 = 0; private var viewY0 = 0; private var viewX1 = -1; private var viewY1 = -1
+
+    /** One tile of the sheet (32x32), e.g. for the Polaroid's stickers. */
+    fun tileBitmap(id: Int): Bitmap? = tiles.getOrNull(id)
+
+    /**
+     * The map as it is on screen now (the same cells, with the weather), at
+     * [scale] x 32 px per tile, capped at [maxPx] on the longer side. Null if
+     * no map is showing. Main thread.
+     */
+    fun renderMapBitmap(scale: Int, maxPx: Int = 2560): Bitmap? {
+        val s = state ?: return null
+        if (tiles.isEmpty() || viewX1 < viewX0 || viewY1 < viewY0 || s.displayMode != GameState.DISPLAY_MAP) return null
+        val cols = viewX1 - viewX0 + 1
+        val rows = viewY1 - viewY0 + 1
+        var t = tileSrc * scale.coerceAtLeast(1)
+        while (t > 8 && maxOf(cols, rows) * t > maxPx) t -= 8
+        val bmp = try { Bitmap.createBitmap(cols * t, rows * t, Bitmap.Config.ARGB_8888) } catch (_: OutOfMemoryError) { return null }
+        val c = Canvas(bmp)
+        c.drawColor(mapBg)
+        val saved = Rect(dstRect)
+        for (ty in viewY0..viewY1) for (tx in viewX0..viewX1) {
+            dstRect.set((tx - viewX0) * t, (ty - viewY0) * t, (tx - viewX0 + 1) * t, (ty - viewY0 + 1) * t)
+            drawTile(c, s.tile(tx, ty))
+            if (tx == s.playerX && ty == s.playerY && s.playerCursor && s.hatTile > 0) drawTile(c, s.hatTile)
+            val o = s.overlay(tx, ty)
+            if (o >= 0) drawTile(c, o)
+            if (s.petX >= 0 && tx == s.petX && ty == s.petY) drawTile(c, TILE_PET_HEART)
+        }
+        if (weather.active) {
+            for (ty in viewY0..viewY1) for (tx in viewX0..viewX1) {
+                dstRect.set((tx - viewX0) * t, (ty - viewY0) * t, (tx - viewX0 + 1) * t, (ty - viewY0 + 1) * t)
+                weather.drawCell(c, tiles, dstRect, tx, ty, s.mmCat(tx, ty))
+            }
+            weather.drawTint(c, RectF(0f, 0f, bmp.width.toFloat(), bmp.height.toFloat()))
+        }
+        dstRect.set(saved)
+        return bmp
+    }
+
+    /** The player's sprite (the tile under the cursor), or -1. */
+    fun playerTile(): Int = state?.let { if (it.playerX in 0 until it.mapW && it.playerY in 0 until it.mapH) it.tile(it.playerX, it.playerY) else -1 } ?: -1
 
     // ---------------------------------------------------------- answers
 
