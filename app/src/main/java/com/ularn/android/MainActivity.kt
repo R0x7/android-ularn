@@ -47,6 +47,7 @@ import com.ularn.android.stats.StatsDialog
 import com.ularn.android.a11y.AccessibilityPrefs
 import com.ularn.android.a11y.AccessibilitySettingsUi
 import com.ularn.android.a11y.MessageAnnouncer
+import com.ularn.android.audio.Radio
 import com.ularn.android.saves.SlotsController
 
 class MainActivity : Activity(), ControlsOverlay.Listener {
@@ -62,6 +63,8 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
     private lateinit var slotsUi: SlotsController
     private lateinit var a11yPrefs: AccessibilityPrefs
     private lateinit var announcer: MessageAnnouncer
+    /** Wild Edition: Dungeon Radio (music + sound effects). */
+    private lateinit var radio: Radio
 
     private lateinit var game: GameView
     private lateinit var overlay: ControlsOverlay
@@ -119,6 +122,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         )
         game.state = session.state
         events = GameEvents { session.state }   // Wild Edition: C-side events (sound, cards...)
+        radio = Radio(this, settings, { session.state }, { session.isRunning }).also { events.addListener(it) }
         val followUp = KeyFollowUp({ session.state }) { if (session.isRunning) session.send(it) }
         contextAction = ContextAction({ session.state }, { session.isRunning }, followUp) { overlay.contextUi = it }
         spellPicker = SpellPicker(this, { session.state }, { session.isRunning }, followUp) { if (session.isRunning) session.send(it) }
@@ -179,6 +183,16 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         game.textScale = scale; game.highContrast = a11yPrefs.highContrast
         overlay.textScale = scale; overlay.highContrast = a11yPrefs.highContrast
         announcer.enabled = a11yPrefs.announceMessages
+    }
+
+    override fun onResume() {
+        super.onResume()
+        radio.onResume()
+    }
+
+    override fun onPause() {
+        radio.onPause()   // no music while the app is in the background
+        super.onPause()
     }
 
     override fun onStop() {
@@ -617,7 +631,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
             "Save game & quit",
             "Leave (resume from checkpoint later)",
             "Statistics & achievements",
-        )
+        ) + (if (settings.wild(Settings.WILDF_RADIO)) arrayOf("Radio") else emptyArray())
         AlertDialog.Builder(this).setItems(items) { _, which ->
             when (which) {
                 0 -> setKeyboard(!keyboardShown)
@@ -631,6 +645,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
                     .setPositiveButton("Leave") { _, _ -> quitAfterExit = true; session.leave() }
                     .setNegativeButton("Cancel", null).show()
                 7 -> StatsDialog.show(this, tracker.book)
+                8 -> radio.showDialog()
             }
         }.show()
     }

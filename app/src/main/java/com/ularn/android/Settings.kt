@@ -119,6 +119,16 @@ class Settings(context: Context) {
     fun wild(bit: Int) = (wildFlags and bit) != 0
     fun setWild(bit: Int, on: Boolean) { wildFlags = if (on) wildFlags or bit else wildFlags and bit.inv() }
 
+    /** Dungeon Radio: music volume, 0..100 (Radio entry of the in-game menu). */
+    var radioMusicVolume: Int
+        get() = p.getInt("radioMusic", 60)
+        set(v) = p.edit().putInt("radioMusic", v.coerceIn(0, 100)).apply()
+
+    /** Dungeon Radio: sound effects volume, 0..100. */
+    var radioSfxVolume: Int
+        get() = p.getInt("radioSfx", 80)
+        set(v) = p.edit().putInt("radioSfx", v.coerceIn(0, 100)).apply()
+
     companion object {
         // Feature bits: keep in sync with compat/wild.h (WILDF_*).
         const val WILDF_RADIO = 1 shl 0
