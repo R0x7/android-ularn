@@ -6,6 +6,11 @@
 > realm, fishing, pets, level-up perks, weather and a Polaroid camera). It
 > installs beside the normal app as **"Ularn Wild"** with its own saves.
 >
+> **Play in your browser:** https://r0x7.github.io/android-ularn/ (no
+> install; the same game compiled to WebAssembly, with a shared top-100
+> leaderboard). It is built from the [`ularn-web`](https://github.com/R0x7/android-ularn/tree/ularn-web/web)
+> branch, which follows this one automatically.
+>
 > **Install:** on your phone open
 > https://github.com/R0x7/android-ularn/releases/download/wild-latest/ularn-wild.apk
 > (every push to this branch rebuilds it). Each feature is described in

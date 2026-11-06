@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 env:
-  WEB_BRANCH: ccr-fa7a4c55-ev0a7r
+  WEB_BRANCH: ularn-web
 
 permissions:
   contents: write   # push the web branch and gh-pages
