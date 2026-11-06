@@ -71,9 +71,15 @@ be edited by hand in the Supabase dashboard.
 
 ## Layout
 
-The game fills the browser window. The map is drawn at the largest whole
-number of pixels per tile that fits (up to 72); where that would be under
-14px (phones) it zooms in and follows the player instead. Below it is a
+The game fills the browser window. The 67x17 map is much wider than a
+screen is tall, so showing all of it leaves tiny tiles; by default the map
+is zoomed so about 40 columns fit across, and the view follows the player
+(it scrolls when you get near an edge, not on every step). The toolbar's
+**− / +** buttons, or the mouse wheel over the map, change the zoom: all the
+way out shows the whole map, all the way in fills the height with all 17
+rows (up to 72px per tile). The zoom is kept in `localStorage`. Tiles are a
+whole number of device pixels so they stay crisp. Where tiles would be
+under 14px (phones) it zooms in and follows the player. Below it is a
 scrollable message log (Ularn only shows 5 lines; older ones are kept and
 dimmed). Text pages (help, shops, inventory) are scaled to fill the play
 area. On screens wider than 1000px a side panel shows the character,

@@ -60,6 +60,11 @@ body.playing #app { max-width: none; height: 100vh; height: 100dvh; padding: 8px
 @keyframes pulse { to { opacity: .45; } }
 #tools { display: flex; gap: 6px; }
 .tool { padding: 4px 10px; font-size: 13px; }
+.tool:disabled { opacity: .4; cursor: default; background: var(--btn); color: var(--fg); border-color: var(--line); }
+.zoom { display: inline-flex; }
+.zoom .tool { min-width: 30px; padding: 4px 8px; font-weight: 600; }
+.zoom .tool:first-child { border-radius: 6px 0 0 6px; border-right: 0; }
+.zoom .tool:last-child { border-radius: 0 6px 6px 0; }
 
 #main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 12px; }
 body.noside #main { grid-template-columns: minmax(0, 1fr); }
@@ -121,6 +126,7 @@ body:not(.touchui) #controls { display: none; }
 @media (max-width: 600px) {
   body.playing #app { padding: 6px 8px; }
   #tools .tool:not(#t-controls):not(#t-radio) { display: none; }
+  #tools .zoom { display: none; }
   #t-radio-name { display: none; }
   #msgs { font-size: 12px; }
   #pad { grid-template-columns: repeat(3, 46px); }

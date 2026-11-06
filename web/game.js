@@ -251,6 +251,15 @@ function wireControls() {
     else document.documentElement.requestFullscreen().catch(() => {});
   });
   if (!document.documentElement.requestFullscreen) $('t-full').hidden = true;
+  $('t-zin').addEventListener('click', () => setZoom(zoom + 1));
+  $('t-zout').addEventListener('click', () => setZoom(zoom - 1));
+  // Mouse wheel over the map zooms too (the page itself never scrolls).
+  let wheel = 0;
+  $('map').addEventListener('wheel', (e) => {
+    e.preventDefault();
+    wheel += e.deltaY;
+    if (Math.abs(wheel) >= 60) { setZoom(zoom + (wheel < 0 ? 1 : -1)); wheel = 0; }
+  }, { passive: false });
   $('t-radio').addEventListener('click', () => Radio.showDialog());
   Radio.wireDialog();
   Radio.onChange = (s) => {
@@ -465,6 +474,31 @@ function renderSide() {
   setHtml('inv', inv || '<li class="empty">Empty</li>');
 }
 
+/* Zoom: how many map columns fit across the play area. The first step shows
+ * the whole 67x17 map; the others zoom in and the view follows the player.
+ * Tiles never get taller than the room above the message log, so all 17 rows
+ * stay visible on desktop screens. */
+const ZOOM_COLS = [67, 56, 48, 40, 34, 28, 24];
+let zoom = Math.max(0, Math.min(ZOOM_COLS.length - 1, store.get('zoom', 3)));
+let cam = null;   // {x0, y0, cols, rows} of the last frame, for the follow camera
+
+function setZoom(z) {
+  z = Math.max(0, Math.min(ZOOM_COLS.length - 1, z));
+  if (z === zoom) return;
+  zoom = z; store.set('zoom', z); cam = null;
+  if (running && L) render();
+}
+
+/* Scroll only when the player gets near the edge of the view (a quarter of
+ * it), then re-centre, so the map doesn't shift under you on every step. */
+function follow(p, prev, n, N) {
+  if (n >= N) return 0;
+  const m = Math.floor(n / 4);
+  let s = prev;
+  if (s === null || p < s + m || p >= s + n - m) s = p - (n >> 1);
+  return Math.max(0, Math.min(N - n, s));
+}
+
 function drawMap() {
   const cv = $('map');
   const MW = L.map_w, MH = L.map_h;
@@ -474,16 +508,24 @@ function drawMap() {
   // message log takes whatever height is left.
   const reserved = 5 * 18 + 26 + ($('status').offsetHeight ? $('status').offsetHeight + 6 : 0);
   const aw = Math.max(100, col.clientWidth - 2), ah = Math.max(100, col.clientHeight - reserved - 2);
-  // The whole map, as big as that allows (whole pixels per tile). On small
-  // screens, where that would be under 14px, zoom in and follow the player.
-  let t = Math.min(Math.floor(aw / MW), Math.floor(ah / MH), 72);
-  if (t < 14) t = Math.max(20, Math.min(32, Math.floor(aw / 15)));
+  // Tile size in device pixels (a whole number, so tiles stay crisp), from
+  // the zoom step, capped so the 17 rows fit the height.
   const dpr = window.devicePixelRatio || 1;
+  const tMax = Math.min(Math.floor(ah * dpr / MH), Math.round(72 * dpr));
+  let td = Math.min(Math.floor(aw * dpr / Math.min(MW, ZOOM_COLS[zoom])), tMax);
+  const maxed = td >= tMax;
+  // Phones: where even that is under 14px, zoom in and follow the player.
+  if (td < 14 * dpr) td = Math.round(Math.max(20, Math.min(32, Math.floor(aw / 15))) * dpr);
+  const t = td / dpr;
   const cols = Math.min(MW, Math.floor(aw / t)), rows = Math.min(MH, Math.max(1, Math.floor(ah / t)));
   const px = i32(L.player_x), py = i32(L.player_y);
-  const x0 = Math.max(0, Math.min(MW - cols, px - (cols >> 1)));
-  const y0 = Math.max(0, Math.min(MH - rows, py - (rows >> 1)));
+  const same = cam && cam.cols === cols && cam.rows === rows;
+  const x0 = follow(px, same ? cam.x0 : null, cols, MW);
+  const y0 = follow(py, same ? cam.y0 : null, rows, MH);
+  cam = { x0, y0, cols, rows };
   view = { x0, y0, t };
+  $('t-zin').disabled = maxed || zoom === ZOOM_COLS.length - 1;
+  $('t-zout').disabled = zoom === 0;
   const w = cols * t, h = rows * t;
   st.style.height = (h + 2) + 'px';
   $('playcol').style.setProperty('--mapw', (w + 2) + 'px');
