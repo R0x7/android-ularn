@@ -4,7 +4,8 @@ An Android port of **Ularn 1.6.3a** (Julian Olds' graphical version, from
 [R0x7/ularn-1.6.3a](https://github.com/R0x7/ularn-1.6.3a)), with the original
 tile graphics and fully customizable on-screen controls.
 
-The upstream C game core runs unmodified. A new Android front end
+The upstream C game core runs unmodified, apart from a narrower
+character-class screen so it fits a phone held upright. A new Android front end
 (`ularn_winandroid.c`) implements the game's display/input interface
 (`ularn_win.h`), the same way the X11, Windows and Amiga versions do.
 

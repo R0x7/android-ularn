@@ -394,6 +394,36 @@ static void pick_char(int foo)
   if (foo == 0)
   {
     ClearText();
+#ifdef __ANDROID__
+    /*
+     * Android: a narrow (~46 column) layout so the page stays readable on a
+     * phone held upright. The classic layout below is about 75 columns wide.
+     */
+    MoveCursor(1, 1);
+    Standout("The Addiction of Ularn\n\n");
+    Print("Pick a character class...\n\n");
+
+    Standout("a) Ogre\n");
+    Print("   Exceptional strength, but thick as a brick\n");
+    Standout("b) Wizard\n");
+    Print("   Smart, good at magic, but very weak\n");
+    Standout("c) Klingon\n");
+    Print("   Strong and average IQ, but unwise & very ugly\n");
+    Standout("d) Elf\n");
+    Print("   OK at magic, but a mediocre fighter\n");
+    Standout("e) Rogue\n");
+    Print("   Nimble and smart, but only average strength\n");
+    Standout("f) Adventurer\n");
+    Print("   Jack of all trades, master of none\n");
+    Standout("g) Dwarf\n");
+    Print("   Strong and healthy, but not good at magic\n");
+    Standout("h) Rambo\n");
+    Print("   A special challenge. Bad at everything,\n");
+    Print("   but has a lance of death");
+
+    MoveCursor(1, 24);
+    i = get_prompt_input("So, what are ya? ", "abcdefgh", 1);
+#else
     MoveCursor(29, 1);
     Standout("The Addiction of Ularn\n\n");
     Print("Pick a character class...\n\n");
@@ -417,7 +447,7 @@ static void pick_char(int foo)
 
     MoveCursor(1, 24);
     i = get_prompt_input("So, what are ya? ", "abcdefgh", 1);
-
+#endif
   }
   else
   {
