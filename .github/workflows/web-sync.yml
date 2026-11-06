@@ -1,0 +1,58 @@
+name: Sync web port
+
+# Lives on ularn-wild (and, via the merges, on the web branch too).
+# Every push to ularn-wild is merged into the web branch (WEB_BRANCH), which
+# is then built and published to GitHub Pages. The two branches stay
+# separate: the web branch is ularn-wild plus web/ and these workflows.
+#
+# If the merge conflicts, or GitHub refuses the push (Actions' token may not
+# push commits that change files under .github/workflows/), the run says so;
+# merge by hand once (git merge ularn-wild on the web branch) and push.
+on:
+  push:
+    branches: [ularn-wild]
+  workflow_dispatch:
+
+env:
+  WEB_BRANCH: ccr-fa7a4c55-ev0a7r
+
+permissions:
+  contents: write   # push the web branch and gh-pages
+
+concurrency:
+  group: web-pages
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.WEB_BRANCH }}
+          fetch-depth: 0
+      - name: Merge ularn-wild into the web branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch -q origin ularn-wild
+          if ! git merge --no-edit -m "Merge ularn-wild into ${WEB_BRANCH} (auto)" origin/ularn-wild; then
+            git merge --abort || true
+            echo "::error::ularn-wild does not merge cleanly into ${WEB_BRANCH}; merge it by hand."
+            exit 1
+          fi
+      - name: Push the web branch
+        id: push
+        continue-on-error: true
+        run: git push origin "HEAD:${WEB_BRANCH}"
+      - name: Warn if the push was refused
+        if: steps.push.outcome == 'failure'
+        run: echo "::warning::Could not push ${WEB_BRANCH} (probably a workflow file changed on ularn-wild). The site is still published from the merged code; merge ularn-wild into ${WEB_BRANCH} by hand to catch the branch up."
+      - name: Install Emscripten
+        run: sudo apt-get update -q && sudo apt-get install -y -q emscripten
+      - name: Build
+        run: web/build.sh
+      - name: Publish to gh-pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: web/publish.sh "ularn-wild $(git rev-parse --short origin/ularn-wild) merged into ${WEB_BRANCH}"
