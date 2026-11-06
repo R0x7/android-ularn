@@ -8,7 +8,7 @@ Play: https://r0x7.github.io/android-ularn/
 
 ## Branches and publishing
 
-The web port lives on its own branch (`ccr-fa7a4c55-ev0a7r`) = `ularn-wild`
+The web port lives on its own branch (`ularn-web`) = `ularn-wild`
 plus `web/` and two workflows. It follows `ularn-wild` automatically:
 
 * `.github/workflows/web-sync.yml` (on `ularn-wild`): every push to

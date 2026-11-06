@@ -9,7 +9,7 @@ name: Web build (GitHub Pages)
 # branch and publishes in one go.
 on:
   push:
-    branches: [ccr-fa7a4c55-ev0a7r]
+    branches: [ularn-web]
     paths: [web/**, app/src/main/cpp/**, app/src/main/assets/**, .github/workflows/web*.yml]
   workflow_dispatch:
 
