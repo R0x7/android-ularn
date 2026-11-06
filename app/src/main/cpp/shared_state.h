@@ -65,6 +65,7 @@
 #define US_CTX_ALTAR       12  /* '.' (prompt: pray / desecrate) */
 #define US_CTX_THRONE      13  /* '.' (prompt: pry / sit) */
 #define US_CTX_LAMP        14  /* brass lamp: '.' (prompt: rub / take) */
+#define US_CTX_VENDING     15  /* Wild Edition vending machine: '.' (prompt: buy / kick) */
 
 /* ctx_flags */
 #define US_CTXF_ENHANCED   1   /* enhanced interface on ('o' + dir opens doors) */

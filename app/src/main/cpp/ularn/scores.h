@@ -68,6 +68,7 @@ typedef enum
   DIED_ANNOYED_GENIE,
   DIED_ELEVATOR_TO_HELL,
   DIED_QUICK_QUIT,
+  DIED_WILD_VENDING,   /* Wild Edition: a toppled vending machine */
   DIED_COUNT
 } DiedReasonType;
 

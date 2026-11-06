@@ -164,7 +164,7 @@ struct monst monster[MONST_COUNT] = {
 { "null pointer",         8,    2,   7,  0,   3,  200,    60,     400, FL_FLY|FL_INFRAVIS},
 { "fountain kraken",      7,    4,   6,  0,   3,  300,    70,     300, FL_NOBEHEAD},
 { "tax auditor",          6,    6,   0,  0,  12,    0,    40,      50, FL_HEAD},
-{ "roomba",               4,    8,   1,  0,   3,    0,    25,      30, FL_SLOW|FL_NOBEHEAD},
+{ "roomba",               2,    8,   1,  0,   3,    0,    25,      30, FL_SLOW|FL_NOBEHEAD},
 { "type I demon lord",   12,  -40,  20,  3,  20,    0,   150,   50000, FL_HEAD|FL_NOBEHEAD|FL_FLY|FL_INFRAVIS},
 { "type II demon lord",  13,  -45,  25,  5,  22,    0,   200,   75000, FL_HEAD|FL_NOBEHEAD|FL_FLY|FL_INFRAVIS},
 { "type III demon lord", 14,  -50,  30,  9,  24,    0,   250,  100000, FL_HEAD|FL_NOBEHEAD|FL_FLY|FL_INFRAVIS},
