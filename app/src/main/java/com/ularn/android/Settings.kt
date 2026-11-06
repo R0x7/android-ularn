@@ -82,7 +82,7 @@ class Settings(context: Context) {
     }
 
     /** Builds Ularn 1.6.3a's ularn.opt: "OPTION name:X,gender:male,...". */
-    fun buildOptsFile(): String {
+    fun buildOptsFile(playerName: String = this.playerName, female: Boolean = this.female): String {
         // ',' and ':' separate options in ularn.opt.
         val name = playerName.replace(Regex("[,:\\r\\n]"), " ").trim().take(30).ifBlank { "Adventurer" }
         val opts = mutableListOf("name:$name", "gender:" + if (female) "female" else "male")

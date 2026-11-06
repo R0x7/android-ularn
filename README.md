@@ -52,6 +52,16 @@ Requires Android 7.0+ (API 24). Builds for arm64-v8a, armeabi-v7a and x86_64.
   Tap a text page (inventory, help, scores) to continue.
 - **Hardware / Bluetooth keyboards** work directly; arrow keys and the numpad
   move (toggle in Settings).
+- **Save slots:** the start screen lists your slots with each character's
+  name, level, depth and when it was last played. Tap a slot to continue it,
+  resume its checkpoint, start a new game in it, rename, delete, or export it
+  to a `.zip` file (and *Import a saved game…* to load one into an empty
+  slot). Each slot has its own save and checkpoint; the scoreboard is shared.
+  A save from before slots existed is moved into slot 1 automatically.
+- **Accessibility** (Settings): game text size (85–150%, also following the
+  system font size), a high-contrast mode, TalkBack labels for every
+  on-screen button and D-pad direction, and an option to have TalkBack read
+  new game messages.
 - **Checkpoints:** the game checkpoints every 25 moves and whenever the app
   goes to the background, so if Android closes it you can *Resume from
   checkpoint*. Use *Save game & quit* (or `S`) for a full save.
@@ -132,8 +142,11 @@ app/src/main/java/com/ularn/android/
 ```
 
 Each game is a fresh `fork()` of the app process, so the game's global state
-always starts clean. Game files (`ularn_player.sav`, `ularn_player.ckp`,
-`Uscore`, `ularn.opt`) live in the app's private storage.
+always starts clean. Game files live in the app's private storage: the game
+runs in `ularn163/` (data files and the shared `Uscore`), with `$HOME` set to
+the save slot's folder `ularn163/slots/<n>/`, where Ularn keeps
+`ularn_player.sav`, `ularn_player.ckp` and `ularn.opt`; the app adds
+`slot.json` (name, level, depth, last played).
 
 ## License
 
