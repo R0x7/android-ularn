@@ -59,6 +59,14 @@ object StatsDialog {
             note(describe(cur), dim = false)
         }
 
+        // Wild Edition photo mode: the newest Polaroid (auto-snapped at death / victory, or taken by hand)
+        com.ularn.android.photo.PhotoMode.loadLastPhoto(context, context.resources.displayMetrics.widthPixels)?.let { bmp ->
+            header("Last photo")
+            box.addView(android.widget.ImageView(context).apply {
+                setImageBitmap(bmp); adjustViewBounds = true; contentDescription = "Your last photo"
+            }, LinearLayout.LayoutParams(-1, -2))
+        }
+
         val unlockedCount = Achievements.ALL.count { it.id in book.unlocked }
         header("Achievements ($unlockedCount/${Achievements.ALL.size})")
         val dateFmt = DateFormat.getDateInstance(DateFormat.MEDIUM)
