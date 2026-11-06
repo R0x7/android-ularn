@@ -14,6 +14,11 @@ class Settings(context: Context) {
         get() = p.getBoolean("female", false)
         set(v) = p.edit().putBoolean("female", v).apply()
 
+    /** Difficulty for the next new game (the game's `-d` option); see [MAX_DIFFICULTY]. */
+    var difficulty: Int
+        get() = p.getInt("difficulty", 0).coerceIn(0, MAX_DIFFICULTY)
+        set(v) = p.edit().putInt("difficulty", v.coerceIn(0, MAX_DIFFICULTY)).apply()
+
     var skipIntro: Boolean
         get() = p.getBoolean("skipIntro", false)
         set(v) = p.edit().putBoolean("skipIntro", v).apply()
@@ -178,6 +183,27 @@ class Settings(context: Context) {
             WILDF_WEATHER to "Weather and day/night on the surface",
             WILDF_PHOTO to "Polaroid photo mode",
         )
+
+        /** Highest difficulty the slider offers (the game itself accepts up to 100). */
+        const val MAX_DIFFICULTY = 10
+
+        /** Game arguments for a new game at difficulty [level]. */
+        fun difficultyArgs(level: Int): List<String> =
+            if (level > 0) listOf("-d", level.coerceAtMost(MAX_DIFFICULTY).toString()) else emptyList()
+
+        /**
+         * What [level] does to monsters, mirroring the game's sethard():
+         * hit points x(6+k)/6, damage x(6+k)/5, gold x10/(10+k),
+         * armour class -k, experience x7/(7+k).
+         */
+        fun describeDifficulty(level: Int): String {
+            val k = level.coerceIn(0, MAX_DIFFICULTY)
+            if (k == 0) return "Standard game: monsters at their normal strength."
+            fun pct(f: Double) = Math.round(f * 100).toInt()
+            return "Monsters: ${pct((6 + k) / 6.0)}% hit points, ${pct((6 + k) / 5.0)}% damage, " +
+                "armour class -$k. They drop ${pct(10.0 / (10 + k))}% gold and give " +
+                "${pct(7.0 / (7 + k))}% experience."
+        }
 
         /** Rotation choices: label to ActivityInfo.screenOrientation. */
         val ORIENTATIONS = listOf(

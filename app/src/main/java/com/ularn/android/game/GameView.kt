@@ -171,7 +171,8 @@ class GameView(context: Context) : View(context) {
     private var camX = 0f
     private var camY = 0f
 
-    private class Chip(val label: String, val keys: ByteArray?, val action: (() -> Unit)? = null) {
+    /** [key]: an inventory letter drawn in front of [label] (item prompts). */
+    private class Chip(val label: String, val keys: ByteArray?, val action: (() -> Unit)? = null, val key: String? = null) {
         val rect = RectF()
     }
 
@@ -218,13 +219,26 @@ class GameView(context: Context) : View(context) {
         onFrame?.invoke(s)
 
         buildChips(s)
-        val chipH = if (chips.isEmpty()) 0f else maxOf(dp(44f), sp(40f))
+        // On the map the layout always keeps one row of answer buttons, so a
+        // prompt (stepping on a potion, "wield what?") never shrinks the map and
+        // makes it jump; a taller item grid is drawn over the map instead.
+        val onMap = s.displayMode != GameState.DISPLAY_TEXT
+        val chipH = if (onMap) chipRowH() else chipBarHeight()
         val area = RectF(content.left, content.top, content.right, content.bottom - chipH)
 
         if (s.displayMode == GameState.DISPLAY_TEXT) drawTextPage(canvas, s, area)
         else drawMapMode(canvas, s, area)
 
-        if (chips.isNotEmpty()) drawChips(canvas, RectF(content.left, content.bottom - chipH, content.right, content.bottom))
+        if (chips.isNotEmpty()) {
+            val full = chipBarHeight()
+            if (!onMap || full <= chipH) drawChips(canvas, RectF(content.left, content.bottom - chipH, content.right, content.bottom))
+            else {
+                val grid = RectF(content.left, maxOf(mapRect.top, mapRect.bottom - full), content.right, mapRect.bottom)
+                fill.color = panel
+                canvas.drawRect(grid, fill)
+                drawChips(canvas, grid)
+            }
+        }
         if (swipeActive) drawSwipe(canvas)
         weather.drawFlash(canvas, width, height)
     }
@@ -398,24 +412,22 @@ class GameView(context: Context) : View(context) {
         drawFitted(canvas, glitch.text(stats), x0, y, w, lineH, ui)
         y += lineH
 
-        // --- effects
+        // --- effects (the row is always kept so the map doesn't jump when one starts or ends)
         val active = GameState.EFFECT_NAMES.filterIndexed { i, _ -> s.effects and (1 shl i) != 0 }
-        if (active.isNotEmpty()) {
-            ui.textSize = sp(11f)
-            var cx = x0
-            val h = sp(18f)
-            for (name in active) {
-                val cw = ui.measureText(name) + dp(12f)
-                if (cx + cw > x1) break
-                fill.color = if (highContrast) Color.BLACK else Color.argb(200, 60, 50, 20)
-                canvas.drawRoundRect(cx, y + dp(1f), cx + cw, y + dp(1f) + h, h / 2, h / 2, fill)
-                hcOutline(canvas, cx, y + dp(1f), cx + cw, y + dp(1f) + h, h / 2)
-                ui.color = if (highContrast) Color.WHITE else accent
-                canvas.drawText(name, cx + dp(6f), y + dp(1f) + h / 2 - (ui.descent() + ui.ascent()) / 2, ui)
-                cx += cw + dp(4f)
-            }
-            y += h + dp(4f)
+        ui.textSize = sp(11f)
+        val h = sp(18f)
+        var cx = x0
+        for (name in active) {
+            val cw = ui.measureText(name) + dp(12f)
+            if (cx + cw > x1) break
+            fill.color = if (highContrast) Color.BLACK else Color.argb(200, 60, 50, 20)
+            canvas.drawRoundRect(cx, y + dp(1f), cx + cw, y + dp(1f) + h, h / 2, h / 2, fill)
+            hcOutline(canvas, cx, y + dp(1f), cx + cw, y + dp(1f) + h, h / 2)
+            ui.color = if (highContrast) Color.WHITE else accent
+            canvas.drawText(name, cx + dp(6f), y + dp(1f) + h / 2 - (ui.descent() + ui.ascent()) / 2, ui)
+            cx += cw + dp(4f)
         }
+        y += h + dp(4f)
         y += dp(2f)
 
         // --- messages: the game's 5x80 message lines, reflowed
@@ -641,8 +653,9 @@ class GameView(context: Context) : View(context) {
         if (key == chipsKey) return
         chipsKey = key
         chips.clear()
+        itemGrid = false
         when (s.inputMode) {
-            GameState.INPUT_PROMPT -> {
+            GameState.INPUT_PROMPT -> if (!buildItemChips(s)) {
                 val keys = s.answers.filter { it.code in 0x20..0x7e || it == '\r' || it == '\u001b' }.toList().distinct()
                 if (keys.size in 1..14) {
                     // Esc / Enter go last so letters stay in reading order.
@@ -657,21 +670,82 @@ class GameView(context: Context) : View(context) {
                 chips += Chip("Enter", byteArrayOf(13))
             }
             GameState.INPUT_PASSWORD -> {
-                chips += Chip("⌨ Type", null) { onToggleKeyboard?.invoke() }
+                chips += Chip("⌨ Type", null, action = { onToggleKeyboard?.invoke() })
                 chips += Chip("Enter", byteArrayOf(13))
             }
             GameState.INPUT_DIR -> chips += Chip("Swipe or press a direction", null)
         }
     }
 
+    /**
+     * "What do you want to eat / quaff / read / wear / wield / drop?"
+     * (action.c `whatitem()`): one button per item the game suggests, named
+     * as in the inventory, plus the extra answers. Returns false if this
+     * isn't such a prompt.
+     */
+    private fun buildItemChips(s: GameState): Boolean {
+        val a = s.answers
+        if (a != ITEM_ANSWERS && a != DROP_ANSWERS && a != WIELD_ANSWERS) return false
+
+        // The prompt lists the fitting slots: "[ac * for all - for none]".
+        var listed: String? = null
+        for (r in s.msgLines - 1 downTo 0) {
+            val line = String(CharArray(s.lineLen) { s.msgChar(r, it) })
+            val at = line.indexOf("What do you want to ")
+            if (at < 0) continue
+            val open = line.indexOf('[', at)
+            val end = line.indexOf("* for all", open)
+            if (open >= 0 && end > open) listed = line.substring(open + 1, end)
+            break
+        }
+        val slots = (listed?.filter { it in 'a'..'z' }?.toList()
+            ?: ('a'..'z').filter { s.invText(it - 'a').isNotEmpty() })
+            .filter { it - 'a' < s.invSlots }
+
+        fun keyOf(c: Char) = byteArrayOf(c.code.toByte())
+        if (a == DROP_ANSWERS && (listed == null || '.' in listed)) chips += Chip("Gold", keyOf('.'), key = ".")
+        for (c in slots) {
+            val name = s.invText(c - 'a').ifEmpty { "item $c" }
+            chips += Chip(name, keyOf(c), key = c.toString())
+        }
+        if (a == WIELD_ANSWERS) chips += Chip("Nothing", keyOf('-'), key = "-")
+        chips += Chip("Show all", keyOf('*'), key = "*")
+        chips += Chip("Cancel", keyOf('\u001b'))
+        itemGrid = true
+        return true
+    }
+
+    /** Item prompts lay their buttons out in a grid; others in one row. */
+    private var itemGrid = false
+
+    private fun chipRowH() = maxOf(dp(44f), sp(40f))
+
+    private fun chipColumns(): Int =
+        (content.width() / maxOf(dp(150f), sp(140f))).toInt().coerceIn(2, 6)
+
+    private fun chipBarHeight(): Float {
+        if (chips.isEmpty()) return 0f
+        if (!itemGrid) return chipRowH()
+        val rows = (chips.size + chipColumns() - 1) / chipColumns()
+        // Leave at least half the screen for the map and the prompt itself.
+        return minOf(rows * chipRowH(), content.height() / 2)
+    }
+
     private fun drawChips(canvas: Canvas, bar: RectF) {
         val gap = dp(6f)
         val n = chips.size
-        val w = ((bar.width() - gap * (n + 1)) / n).coerceAtMost(dp(110f))
-        val total = n * w + (n - 1) * gap
-        var x = bar.centerX() - total / 2
-        for (chip in chips) {
-            chip.rect.set(x, bar.top + gap, x + w, bar.bottom - gap)
+        val cols = if (itemGrid) chipColumns() else n
+        val rows = (n + cols - 1) / cols
+        val rowH = bar.height() / rows
+        val w = ((bar.width() - gap * (cols + 1)) / cols).let { if (itemGrid) it else it.coerceAtMost(dp(110f)) }
+        for ((i, chip) in chips.withIndex()) {
+            val row = i / cols
+            val inRow = minOf(cols, n - row * cols)
+            val total = inRow * w + (inRow - 1) * gap
+            val x = if (itemGrid) bar.left + gap + (i % cols) * (w + gap)
+                else bar.centerX() - total / 2 + (i % cols) * (w + gap)
+            val top = bar.top + row * rowH
+            chip.rect.set(x, top + gap / 2 + if (row == 0) gap / 2 else 0f, x + w, top + rowH - gap / 2 - if (row == rows - 1) gap / 2 else 0f)
             val enabled = chip.keys != null || chip.action != null
             fill.color = if (enabled) (if (highContrast) Color.BLACK else Color.argb(235, 52, 54, 64)) else Color.argb(0, 0, 0, 0)
             canvas.drawRoundRect(chip.rect, dp(10f), dp(10f), fill)
@@ -680,6 +754,7 @@ class GameView(context: Context) : View(context) {
                 canvas.drawRoundRect(chip.rect, dp(10f), dp(10f), fill)
                 fill.style = Paint.Style.FILL
             }
+            if (chip.key != null) { drawItemChip(canvas, chip); continue }
             uiBold.color = if (enabled || highContrast) Color.WHITE else Color.argb(170, 255, 255, 255)
             var size = sp(14f)
             uiBold.textSize = size
@@ -687,8 +762,30 @@ class GameView(context: Context) : View(context) {
             if (tw > w - dp(8f)) { size *= (w - dp(8f)) / tw; uiBold.textSize = size }
             canvas.drawText(chip.label, chip.rect.centerX() - uiBold.measureText(chip.label) / 2,
                 chip.rect.centerY() - (uiBold.descent() + uiBold.ascent()) / 2, uiBold)
-            x += w + gap
         }
+    }
+
+    /** "a  cookie": the inventory letter in the accent colour, then the name, cut with "…". */
+    private fun drawItemChip(canvas: Canvas, chip: Chip) {
+        val r = chip.rect
+        val pad = dp(8f)
+        val size = minOf(sp(14f), r.height() * 0.42f)
+        uiBold.textSize = size
+        ui.textSize = size
+        val base = r.centerY() - (uiBold.descent() + uiBold.ascent()) / 2
+        val key = chip.key ?: ""
+        uiBold.color = if (highContrast) Color.WHITE else accent
+        canvas.drawText(key, r.left + pad, base, uiBold)
+        val x = r.left + pad + uiBold.measureText("M") + dp(4f)
+        val room = r.right - pad - x
+        var label = chip.label
+        if (ui.measureText(label) > room) {
+            var n = ui.breakText(label, true, room - ui.measureText("…"), null)
+            while (n > 0 && label[n - 1] == ' ') n--
+            label = label.substring(0, n.coerceAtLeast(0)) + "…"
+        }
+        ui.color = Color.WHITE
+        canvas.drawText(label, x, base, ui)
     }
 
     // ------------------------------------------------------------ touch
@@ -913,6 +1010,10 @@ class GameView(context: Context) : View(context) {
         /** Hold this long after the first step before walking continuously. */
         private const val SWIPE_HOLD_MS = 320L
         private const val SWIPE_REPEAT_MS = 150L
+        /** whatitem()'s answer sets (action.c SelectItemAns / SelectDropAns / SelectWieldAns). */
+        private const val ITEM_ANSWERS = "abcdefghijklmnopqrstuvwxyz*\u001b"
+        private const val DROP_ANSWERS = "abcdefghijklmnopqrstuvwxyz*.\u001b"
+        private const val WIELD_ANSWERS = "abcdefghijklmnopqrstuvwxyz*-\u001b"
         private val DIR_VEC = mapOf(
             'l' to (1 to 0), 'h' to (-1 to 0), 'k' to (0 to -1), 'j' to (0 to 1),
             'u' to (1 to -1), 'y' to (-1 to -1), 'n' to (1 to 1), 'b' to (-1 to 1),
