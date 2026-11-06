@@ -15,6 +15,7 @@ import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
+import com.ularn.android.game.ContextUi
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.hypot
@@ -55,6 +56,10 @@ class ControlsOverlay(context: Context) : View(context) {
         }
 
     var snapToGrid = true
+
+    /** Live label / enabled state of CONTEXT buttons (see ContextAction). */
+    var contextUi: ContextUi = ContextUi.NEUTRAL
+        set(v) { if (field != v) { field = v; invalidate() } }
 
     var selectedId: String? = null
         private set
@@ -184,7 +189,7 @@ class ControlsOverlay(context: Context) : View(context) {
                         else -> { runArmed = true; mainHandler.postDelayed(runLockRunnable, 550) }
                     }
                 }
-                else -> haptic() // fires on release
+                else -> if (spec.action != ButtonAction.CONTEXT || contextUi.enabled) haptic() // fires on release
             }
         }
         invalidate()
@@ -383,8 +388,10 @@ class ControlsOverlay(context: Context) : View(context) {
         rectFor(c, rect)
         val isRun = c.action == ButtonAction.RUN
         val active = isRun && (runArmed || runLocked)
-        val lit = pressed || (isRun && runLocked)
+        val lit = (pressed && (c.action != ButtonAction.CONTEXT || contextUi.enabled)) || (isRun && runLocked)
         val r = if (c.shape == ButtonShape.CIRCLE) minOf(rect.width(), rect.height()) / 2 else 10f * density
+        val ctx = c.action == ButtonAction.CONTEXT && !editMode
+        @Suppress("NAME_SHADOWING") val alpha = if (ctx && !contextUi.enabled) alpha * 0.45f else alpha
 
         // body
         fill.color = a(
@@ -402,7 +409,8 @@ class ControlsOverlay(context: Context) : View(context) {
         if (c.shape == ButtonShape.CIRCLE) canvas.drawCircle(rect.centerX(), rect.centerY(), r - 0.5f * density, stroke)
         else { rect.inset(0.5f * density, 0.5f * density); canvas.drawRoundRect(rect, r, r, stroke); rect.inset(-0.5f * density, -0.5f * density) }
 
-        val label = c.label.ifEmpty { KeySequence.describe(KeySequence.parse(c.keys)) }
+        val label = (if (ctx) contextUi.label else null)
+            ?: c.label.ifEmpty { if (c.action == ButtonAction.CONTEXT) "Act" else KeySequence.describe(KeySequence.parse(c.keys)) }
         text.color = a(if (lit) Color.rgb(30, 22, 0) else Color.WHITE, minOf(1f, alpha + 0.35f))
         fitText(label, rect.width() * 0.82f, minOf(rect.height() * 0.42f, 16f * density))
         val fm = text.fontMetrics

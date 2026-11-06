@@ -44,6 +44,33 @@
 #define US_FMT_BOLD      4
 #define US_FMT_INVERSE   5
 
+/* context action / spells (fields at the end of UlarnShared) */
+#define US_SPELLS   40           /* >= SPELL_COUNT (39 in 1.6.3a) */
+#define US_CTX_NAME 40
+
+/* ctx_kind: what the player could do with the square they stand on, or
+ * with a closed door next to them (see compat/android_context.c). */
+#define US_CTX_NONE        0   /* nothing to act on */
+#define US_CTX_INSPECT     1   /* a feature with nothing to do (statue, open door...) */
+#define US_CTX_TAKE        2   /* an item: '.' re-looks, then 't' takes */
+#define US_CTX_GOLD        3   /* gold: picked up by '.' */
+#define US_CTX_STAIRS_UP   4   /* '.' then 'u' */
+#define US_CTX_STAIRS_DOWN 5   /* '.' then 'd' */
+#define US_CTX_SHAFT_DOWN  6   /* volcanic shaft: '.' then 'c' */
+#define US_CTX_SHAFT_UP    7   /* '.' then 'c' */
+#define US_CTX_ENTER       8   /* building / dungeon entrance: '.' then 'g' */
+#define US_CTX_PAD         9   /* Dealer McDope's: '.' then 'c' */
+#define US_CTX_CHEST       10  /* 'O' (enhanced interface) or '.' then 'o' */
+#define US_CTX_FOUNTAIN    11  /* '.' (prompt: drink / wash) */
+#define US_CTX_ALTAR       12  /* '.' (prompt: pray / desecrate) */
+#define US_CTX_THRONE      13  /* '.' (prompt: pry / sit) */
+#define US_CTX_LAMP        14  /* brass lamp: '.' (prompt: rub / take) */
+
+/* ctx_flags */
+#define US_CTXF_ENHANCED   1   /* enhanced interface on ('o' + dir opens doors) */
+#define US_CTXF_BLOCKED    2   /* the game won't offer it now (monster adjacent, time stopped) */
+#define US_CTXF_TIMESTOP   4   /* time is stopped: nothing can be moved or looked at */
+
 typedef struct UlarnShared
 {
   int32_t magic;
@@ -85,6 +112,16 @@ typedef struct UlarnShared
   uint8_t msg_fmt[US_MSG_LINES][US_LINE_LEN];
   char    text_chr[US_TEXT_LINES][US_LINE_LEN + 1];
   uint8_t text_fmt[US_TEXT_LINES][US_LINE_LEN];
+
+  /* context action / spells */
+  int32_t ctx_object;           /* item[playerx][playery]; hidden traps read as ONOTHING */
+  int32_t ctx_kind;             /* US_CTX_* */
+  int32_t ctx_flags;            /* US_CTXF_* */
+  int32_t ctx_doors;            /* bit i: known closed door in direction "hjklyubn"[i] */
+  char    ctx_name[US_CTX_NAME]; /* e.g. "a staircase going down" */
+  int32_t spell_count;          /* SPELL_COUNT */
+  uint8_t spell_known[US_SPELLS];        /* spelknow[] != 0 */
+  char    spell_codes[US_SPELLS][4];     /* spelcode[], e.g. "pro" */
 } UlarnShared;
 
 #endif
