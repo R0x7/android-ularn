@@ -12,7 +12,9 @@ android {
         applicationId = "com.ularn.android.wild"
         minSdk = 24
         targetSdk = 35
-        versionCode = 100
+        // CI numbers each build (GITHUB_RUN_NUMBER) so every new APK is a
+        // higher version than the last and Android treats it as an update.
+        versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.plus(100) ?: 100
         versionName = "3.0-wild (Ularn 1.6.3a)"
 
         ndk {
