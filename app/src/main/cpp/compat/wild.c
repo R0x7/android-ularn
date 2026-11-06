@@ -165,15 +165,17 @@ void wild_save(FILE *fp)
 {
   int32_t magic = WILD_TRAILER_MAGIC;
   int32_t n = MONST_COUNT, m = WILD_EXTRA_COUNT;
-  int32_t buf[MONST_COUNT > WILD_EXTRA_COUNT ? MONST_COUNT : WILD_EXTRA_COUNT];
+  int32_t v;
   int i;
+  /* One int per bwrite(): the save checksum (saveutils.c: sum()) depends on
+   * how the bytes are split into calls, and wild_restore() reads them one
+   * at a time. Writing the arrays as one block made any non-zero entry
+   * (a kill, a pet...) look like an altered save on restore. */
   bwrite(fp, (char *) &magic, sizeof magic);
   bwrite(fp, (char *) &n, sizeof n);
-  for (i = 0; i < n; i++) buf[i] = kill_counts[i];
-  bwrite(fp, (char *) buf, n * sizeof(int32_t));
+  for (i = 0; i < n; i++) { v = kill_counts[i]; bwrite(fp, (char *) &v, sizeof v); }
   bwrite(fp, (char *) &m, sizeof m);
-  for (i = 0; i < m; i++) buf[i] = wild_extra[i];
-  bwrite(fp, (char *) buf, m * sizeof(int32_t));
+  for (i = 0; i < m; i++) { v = wild_extra[i]; bwrite(fp, (char *) &v, sizeof v); }
 }
 
 int wild_restore(FILE *fp)
