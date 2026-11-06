@@ -84,6 +84,7 @@
 #include "player.h"
 #include "wild.h"
 #include "wild_hats.h"
+#include "wild_pets.h"
 #include "monster.h"
 #include "dungeon.h"
 #include "dungeon_obj.h"
@@ -716,6 +717,9 @@ int moveplayer(int dir)
     }
 
   }
+
+  /* Wild Edition: walking into your pet swaps places with it */
+  if ((j > 0) && wild_is_pet(k, m)) { if (!wild_pet_swap(k, m)) { yrepcount = 0; return (0); } j = 0; }
 
   if (j>0)
   {

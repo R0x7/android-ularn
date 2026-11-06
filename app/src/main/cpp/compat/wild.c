@@ -54,7 +54,8 @@ int wild_on(int bit)
   if (wild_on(WILDF_PERKS))   wild_perks_##F call; \
   if (wild_on(WILDF_WEATHER)) wild_weather_##F call;
 
-/* First feature that returns non-zero handles it. */
+/* First feature that returns non-zero handles it. Pets go before fishing so
+ * eating a fish next to your pet feeds the pet instead. */
 #define FIRST(F, call) \
   if (wild_on(WILDF_RADIO)   && wild_radio_##F call)   return 1; \
   if (wild_on(WILDF_CARDS)   && wild_cards_##F call)   return 1; \
@@ -62,8 +63,8 @@ int wild_on(int bit)
   if (wild_on(WILDF_HATS)    && wild_hats_##F call)    return 1; \
   if (wild_on(WILDF_COIN)    && wild_coin_##F call)    return 1; \
   if (wild_on(WILDF_GLITCH)  && wild_glitch_##F call)  return 1; \
-  if (wild_on(WILDF_FISHING) && wild_fishing_##F call) return 1; \
   if (wild_on(WILDF_PETS)    && wild_pets_##F call)    return 1; \
+  if (wild_on(WILDF_FISHING) && wild_fishing_##F call) return 1; \
   if (wild_on(WILDF_PERKS)   && wild_perks_##F call)   return 1; \
   if (wild_on(WILDF_WEATHER) && wild_weather_##F call) return 1; \
   return 0;
@@ -312,7 +313,8 @@ int wild_debug(void)
 int wild_is_pet(int x, int y)
 {
   return wild_on(WILDF_PETS) && wild_extra[WX_PET_LEVEL] == level + 1 &&
-         c[WILD_PET_MON] != 0 && wild_extra[WX_PET_X] == x && wild_extra[WX_PET_Y] == y;
+         c[WILD_PET_MON] != 0 && wild_extra[WX_PET_X] == x && wild_extra[WX_PET_Y] == y &&
+         x >= 0 && x < MAXX && y >= 0 && y < MAXY && mitem[x][y].mon == c[WILD_PET_MON];
 }
 
 int wild_free_cell(int *x, int *y)

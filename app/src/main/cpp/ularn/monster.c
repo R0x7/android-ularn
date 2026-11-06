@@ -1423,6 +1423,8 @@ static void movemt(int x, int y)
 
   monst = mitem[x][y].mon;
 
+  if (wild_is_pet(x, y)) return;   /* Wild Edition: the pet moves itself (wild_pets.c) */
+
   /* half speed monsters only move every other turn */
   if ((monster[monst].flags & FL_SLOW) != 0)
   {
