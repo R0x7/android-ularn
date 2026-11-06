@@ -1,0 +1,36 @@
+# 385_fountain_kraken (Wild Edition, fishing feature)
+# purple tentacled thing rising from fountain water
+# k=#426b6b s=#2f4c4c b=#000000 P=#7a4aa8 L=#a880d0 D=#4a2a70
+# Y=#e8d040 A=#5a90d0 a=#3a68b0 q=#24447a w=#c8e8f8
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkbbbbbbbbkkkkkkkkkkkk
+kkkkkkkkkkkbLLLLLPPDbkkkkkkkkkkk
+kkkkkkkkkkbLLLLLLDPDDbkkkkkkkkkk
+kkkkkkkkkbLLLLLLLPPDDDbkkkkkkkkk
+kkkkkkkkkbLLLLDLLPPDDDbkkkkkkkkk
+kkkkkkkkbLLLLLLLLPDDDDDbkkkkkkkk
+kkkkkkkkbPPPDPPPPPPDDDDbkkkkkkkk
+kkkkkkkkbPPPPPPPPPPDDDDbkkkkkkkk
+kkkkkkkkbPPPPPPPPPPDDDDbkkkkkkkk
+kkkkkkkkbPPbbbPPPPbbbDDbkkkkkkkk
+kkkkkkkkbPPYYYPPPPYYYDDbkkkkkkkk
+kkkkkkkkbPYYbbYPPYYbbYDbkkkkkkkk
+kkkkkkkkbPPYbYPPPPYbYDDbkkkkkkkk
+kkkkkkkkkbPPYPPPPPPYDDPbkkkkkkkk
+kkbbbbbkkbPPPPPDDDDDDDPbkkbbbbbk
+kbPPPPPbbPPPPPPDDDDDDPPPbbPPPPPb
+kbPPPPbkbPPPPPPDDDDDbPPPbkbPPPPb
+kbPbPbkbPPPbbPPbbbPPbbPPPbkbPbPb
+kbPbPbbbPPPbbPPbkbPPbbPPPbbbPbPb
+kbPPPbPPPPbbPPPbkbPPPbbPPPPbPPPb
+kkbPLPPPPbkbPPPbkbPPPbkbPPPPLPbk
+kkkbPPLPbkkbPPPbkbPPPbkkbPLPPbkk
+kkkkbbbbkkkbLPbkkkbPLbkkkbbbbkkk
+kkkkkkkkkAAwAAAAAAAAAwAkkkkkkkkk
+kkkkkAAAAwAAAAAAAAAAAAAwAAAkkkkk
+kkkkaaaaaaaaaaaawaaaaaaaaaaakkkk
+kkkaaaaaaaaaaaaaaaaaaaaaaaaaakkk
+kkkkaaaaaaaaaaaaaaaaaaaaaaaakkkk
+kkkkkqqqqqqqqqqqqqqqqqqqqqqkkkkk
+kkkkkkkkkqqqqqqqqqqqqqqkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk

@@ -1,0 +1,36 @@
+# 379_fishing_rod (Wild Edition, fishing feature)
+# a rod with a cork handle, reel, line and bobber
+# k=#426b6b s=#2f4c4c b=#000000 R=#8a5a2c r=#b88050 C=#c8a070
+# c=#e0c090 M=#9a9aa8 D=#55556a W=#f0f0f0 w=#c8d0d0 X=#c42020
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkbkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkbRbkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkbRrwkkkk
+kkkkkkkkkkkkkkkkkkkkkkkbRrRwkkkk
+kkkkkkkkkkkkkkkkkkkkkkbRrRbwkkkk
+kkkkkkkkkkkkkkkkkkkkkbRrRbkwkkkk
+kkkkkkkkkkkkkkkkkkkkbRrRbkkwkkkk
+kkkkkkkkkkkkkkkkkkkbRrrbkkkwkkkk
+kkkkkkkkkkkkkkkkkkbRrrRbkkkwkkkk
+kkkkkkkkkkkkkkkkkbRrrRbkkkkwkkkk
+kkkkkkkkkkkkkkkkkbrrRbkkkkkwkkkk
+kkkkkkkkkkkkkkkkbRrRbkkkkkkwkkkk
+kkkkkkkkkkkkkkkbRrRbkkkkkkkwkkkk
+kkkkkkkkkkkkkkbRrRbkkkkkkkkwkkkk
+kkkkkkkkkkkkkbRrRbkkkkkkkkkXkkkk
+kkkkkkkkkkkkbRrrbkkkkkkkkkXXXkkk
+kkkkkkkkkkkbRrrbkkkkkkkkkWWWWWkk
+kkkkkkkkkkbRrrRbkkkkkkkkkkWWWkkk
+kkkkkkkkkbMMMRbkkkkkkkkkkkkWkkkk
+kkkkkkkkbMMMDDbkkkkkkkkkkkwwkkkk
+kkkkkkkbCMMWDDbkkkkkkkkkkkwkkkkk
+kkkkkkbCCMDDDDbkkkkkkkkkkkkkkkkk
+kkkkkbCCcCDDDbkkkkkkkkkkkkkkkkkk
+kkkkbCCcCCbbbkkkkkkkkkkkkkkkkkkk
+kkkbCCcCCbkkkkkkkkkkkkkkkkkkkkkk
+kkbCCcCCbkkkkkkkkkkkkkkkkkkkkkkk
+kkbCCCCbkkkkkkkkkkkkkkkkkkkkkkkk
+kkbCCCbsssssskkkkkkkkkkkkkkkkkkk
+kkkbbbkkkkkkkkkkkkkkkkkkkkkkkkkk
