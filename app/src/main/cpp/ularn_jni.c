@@ -126,6 +126,16 @@ Java_com_ularn_android_NativeBridge_layout(JNIEnv *env, jclass cls)
         /* minimap / side panel */
         offsetof(UlarnShared, mm_cat), offsetof(UlarnShared, inv_text),
         US_INV_SLOTS, US_INV_LEN,
+        /* context action / spells */
+        offsetof(UlarnShared, ctx_object),
+        offsetof(UlarnShared, ctx_kind),
+        offsetof(UlarnShared, ctx_flags),
+        offsetof(UlarnShared, ctx_doors),
+        offsetof(UlarnShared, ctx_name),
+        offsetof(UlarnShared, spell_count),
+        offsetof(UlarnShared, spell_known),
+        offsetof(UlarnShared, spell_codes),
+        US_CTX_NAME, US_SPELLS,
     };
     jintArray out;
     (void)cls;

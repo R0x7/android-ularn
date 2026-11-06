@@ -36,14 +36,18 @@ import com.ularn.android.controls.ControlSpec
 import com.ularn.android.controls.ControlType
 import com.ularn.android.controls.ControlsOverlay
 import com.ularn.android.controls.LayoutStore
+import com.ularn.android.game.ContextAction
 import com.ularn.android.game.GameView
 import com.ularn.android.game.SidePanelController
+import com.ularn.android.game.KeyFollowUp
 
 class MainActivity : Activity(), ControlsOverlay.Listener {
 
     private lateinit var settings: Settings
     private lateinit var store: LayoutStore
     private lateinit var session: GameSession
+    private lateinit var contextAction: ContextAction
+    private lateinit var spellPicker: SpellPicker
 
     private lateinit var game: GameView
     private lateinit var overlay: ControlsOverlay
@@ -94,10 +98,13 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
 
         session = GameSession(
             this,
-            onChanged = { game.postInvalidateOnAnimation(); sidePanel?.changed() },
+            onChanged = { game.postInvalidateOnAnimation(); sidePanel?.changed(); contextAction.onGameChanged() },
             onExit = { onGameExit() },
         )
         game.state = session.state
+        val followUp = KeyFollowUp({ session.state }) { if (session.isRunning) session.send(it) }
+        contextAction = ContextAction({ session.state }, { session.isRunning }, followUp) { overlay.contextUi = it }
+        spellPicker = SpellPicker(this, { session.state }, { session.isRunning }, followUp) { if (session.isRunning) session.send(it) }
 
         val root = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
         root.addView(game, FrameLayout.LayoutParams(-1, -1))
@@ -293,6 +300,8 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
             ButtonAction.KEYBOARD -> setKeyboard(!keyboardShown)
             ButtonAction.MENU -> showMenu()
             ButtonAction.EDIT -> startEditing()
+            ButtonAction.CONTEXT -> contextAction.trigger()
+            ButtonAction.CAST -> spellPicker.onCastButton()
             else -> {}
         }
     }

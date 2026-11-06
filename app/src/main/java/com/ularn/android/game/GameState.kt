@@ -31,6 +31,10 @@ class GameState(private val shared: ByteBuffer, layout: IntArray) {
         const val MSG_LINES = 42; const val TEXT_LINES = 43
         // minimap / side panel
         const val MM_CAT = 44; const val INV_TEXT = 45; const val INV_SLOTS = 46; const val INV_LEN = 47
+        // context action / spells
+        const val CTX_OBJECT = 48; const val CTX_KIND = 49; const val CTX_FLAGS = 50; const val CTX_DOORS = 51
+        const val CTX_NAME = 52; const val SPELL_COUNT = 53; const val SPELL_KNOWN = 54; const val SPELL_CODES = 55
+        const val CTX_NAME_LEN = 56; const val SPELLS_MAX = 57
     }
 
     private val off = layout
@@ -109,6 +113,15 @@ class GameState(private val shared: ByteBuffer, layout: IntArray) {
 
     /** Inventory slot [i] ('a' + i) as the game words it; "" if empty. */
     fun invText(i: Int): String = cString(off[F.INV_TEXT] + i * off[F.INV_LEN], off[F.INV_LEN])
+    // context action / spells (see ContextAction.kt, SpellPicker.kt)
+    val ctxObject get() = i(F.CTX_OBJECT)
+    val ctxKind get() = i(F.CTX_KIND)
+    val ctxFlags get() = i(F.CTX_FLAGS)
+    val ctxDoors get() = i(F.CTX_DOORS)
+    val ctxName: String get() = cString(off[F.CTX_NAME], off[F.CTX_NAME_LEN])
+    val spellCount get() = i(F.SPELL_COUNT).coerceIn(0, off[F.SPELLS_MAX])
+    fun spellKnown(n: Int): Boolean = n in 0 until spellCount && snap[off[F.SPELL_KNOWN] + n].toInt() != 0
+    fun spellCode(n: Int): String = if (n in 0 until spellCount) cString(off[F.SPELL_CODES] + 4 * n, 4) else ""
 
     private fun cString(at: Int, max: Int): String {
         var n = 0

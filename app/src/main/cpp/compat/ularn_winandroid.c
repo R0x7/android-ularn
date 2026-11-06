@@ -452,6 +452,8 @@ void close_app(void)
 #define CKP_INTERVAL   25
 #define KEY_CHECKPOINT 0x1d   /* Ctrl+] - not bound to anything in the game */
 
+void android_update_context(void);   /* android_context.c */
+
 static void checkpoint(void)
 {
   int saved_nosignal = nosignal;
@@ -468,6 +470,7 @@ ActionType get_normal_input(void)
 
   if (++commands % CKP_INTERVAL == 0) checkpoint();
 
+  android_update_context();   /* context action / spells (android_context.c) */
   set_input_mode(US_INPUT_COMMAND, NULL, 0);
   while (Event == ACTION_NULL)
   {
