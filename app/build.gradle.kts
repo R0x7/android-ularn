@@ -71,4 +71,5 @@ android {
 
 dependencies {
     // No third-party dependencies: framework widgets + Kotlin stdlib only.
+    testImplementation("junit:junit:4.13.2")
 }

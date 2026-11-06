@@ -37,12 +37,16 @@ import com.ularn.android.controls.ControlType
 import com.ularn.android.controls.ControlsOverlay
 import com.ularn.android.controls.LayoutStore
 import com.ularn.android.game.GameView
+import com.ularn.android.stats.Achievement
+import com.ularn.android.stats.RunTracker
+import com.ularn.android.stats.StatsDialog
 
 class MainActivity : Activity(), ControlsOverlay.Listener {
 
     private lateinit var settings: Settings
     private lateinit var store: LayoutStore
     private lateinit var session: GameSession
+    private lateinit var tracker: RunTracker
 
     private lateinit var game: GameView
     private lateinit var overlay: ControlsOverlay
@@ -75,6 +79,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
 
         settings = Settings(this)
         store = LayoutStore(this)
+        tracker = RunTracker(this).apply { onUnlocked = { showUnlocked(it) } }
 
         game = GameView(this).apply {
             onInput = { if (session.isRunning) session.send(it) }
@@ -95,6 +100,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
             onExit = { onGameExit() },
         )
         game.state = session.state
+        game.onFrame = { if (session.isRunning) tracker.observe(it) }
 
         val root = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
         root.addView(game, FrameLayout.LayoutParams(-1, -1))
@@ -136,6 +142,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         // Android may kill a backgrounded app without warning, so make sure a
         // fresh checkpoint exists ("Resume from checkpoint" next time).
         if (session.isRunning) session.requestCheckpoint()
+        tracker.flush()
         super.onStop()
     }
 
@@ -240,6 +247,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         game.tileDp = settings.tileDp
         if (::overlay.isInitialized) game.haptics = overlay.layout.haptics
         if (::overlay.isInitialized) updateMapReserve()
+        game.danger.apply(settings)
     }
 
     private fun applyRotationSetting() {
@@ -268,6 +276,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
     }
 
     private fun onGameExit() {
+        tracker.onGameExit(session.state, session.hasSave() || session.hasCheckpoint())
         game.running = false
         setKeyboard(false)
         if (quitAfterExit) { finish(); return }
@@ -540,6 +549,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         }
         if (session.hasSave()) item("New game (discard save)") { confirmDiscardSave() }
         item("Scoreboard") { startGame(listOf("-s")) }
+        item("Statistics & achievements") { StatsDialog.show(this, tracker.book) }
         item("Edit controls") { startEditing() }
         item("Settings") { showSettings() }
         item("Quit") { finish() }
@@ -580,6 +590,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
             "Game help (?)",
             "Save game & quit",
             "Leave (resume from checkpoint later)",
+            "Statistics & achievements",
         )
         AlertDialog.Builder(this).setItems(items) { _, which ->
             when (which) {
@@ -593,6 +604,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
                     .setMessage("Leave now? The game is checkpointed, so \"Resume from checkpoint\" picks up from here (or from your last few moves if you're in the middle of a menu).")
                     .setPositiveButton("Leave") { _, _ -> quitAfterExit = true; session.leave() }
                     .setNegativeButton("Cancel", null).show()
+                7 -> StatsDialog.show(this, tracker.book)
             }
         }.show()
     }
@@ -640,6 +652,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
 
         header("Keyboard")
         check("Arrow keys / numpad move (hardware keyboard)", settings.arrowsAsMoves) { settings.arrowsAsMoves = it }
+        CueSettings.addTo(this, box, settings)
 
         AlertDialog.Builder(this)
             .setTitle("Settings")
@@ -654,4 +667,10 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
     }
 
     private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
+
+    private fun showUnlocked(list: List<Achievement>) {
+        if (!settings.achievementToasts) return
+        val text = list.joinToString("\n") { "Achievement unlocked: ${it.title}" }
+        game.post { Toast.makeText(this, text, Toast.LENGTH_LONG).show() }
+    }
 }

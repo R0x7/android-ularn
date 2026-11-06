@@ -14,6 +14,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -229,6 +230,94 @@ static void clear_input_mode(void)
   S->input_mode = US_INPUT_BUSY;
   S->caret = 0;
   S->answers[0] = 0;
+}
+
+/* ---- run statistics (danger cues / stats) ----
+ *
+ * The app keeps per-run statistics. Two unused slots of the attribute array
+ * c[] (saved with the game, checkpoint included) hold a random id for the
+ * character and the number of monsters it has killed, so a restored game
+ * keeps both and nothing is counted twice. The greedy-cheater check only
+ * looks at the ability scores, so these slots are left alone by the game.
+ */
+#define C_RUN_ID UNUSED_99
+#define C_KILLS  UNUSED_98
+
+/* Called at each command prompt: by then the character exists. */
+static void note_run(void)
+{
+  if (c[C_RUN_ID] <= 0)
+    c[C_RUN_ID] = (long) ((arc4random() & 0x3fffffff) | 1);
+  S->run_id = (int32_t) c[C_RUN_ID];
+  S->kills = (int32_t) c[C_KILLS];
+}
+
+/* hitm() reports each monster the player kills with "\nThe %s died!". */
+static void note_kill(const char *str)
+{
+  size_t n = strlen(str);
+  if (n > 11 && strncmp(str, "\nThe ", 5) == 0 && strcmp(str + n - 6, " died!") == 0)
+  {
+    c[C_KILLS]++;
+    S->kills = (int32_t) c[C_KILLS];
+  }
+}
+
+/*
+ * died() shows the final score (show_player_score) and then waits with
+ * "Press return to continue". Read the score and the cause of death from that
+ * page. (Quitting with Q and saving skip this page; the app tells those apart
+ * by which save files are left.)
+ */
+static void note_game_end(const char *prompt, const char *answers)
+{
+  char joined[US_TEXT_LINES * US_LINE_LEN + 1];
+  char reason[US_LINE_LEN + 1];
+  char *p;
+  long score = 0;
+  int y, n = 0, r = 0, space = 0;
+  size_t len;
+
+  if (S->end_state != US_END_NONE || S->run_id == 0) return;
+  if (CurrentDisplayMode != DISPLAY_TEXT) return;
+  if (strcmp(answers, "\015") != 0 || strstr(prompt, "Press return") == NULL) return;
+
+  for (y = 0; y < US_TEXT_LINES; y++)
+    if (strstr(S->text_chr[y], "U L A R N    S C O R E S") != NULL) break;
+  for (; y < US_TEXT_LINES; y++)
+    if (sscanf(S->text_chr[y], "Score: %ld", &score) == 1) break;
+  if (y >= US_TEXT_LINES) return;
+
+  /* The "<name> <reason>" line, possibly wrapped, up to the closing rule. */
+  for (y++; y < US_TEXT_LINES && strncmp(S->text_chr[y], "-----", 5) != 0; y++)
+  {
+    memcpy(joined + n, S->text_chr[y], US_LINE_LEN);
+    n += US_LINE_LEN;
+  }
+  joined[n] = 0;
+
+  /* Collapse whitespace. */
+  for (p = joined; *p && r < US_LINE_LEN; p++)
+  {
+    if (*p == ' ' || *p == '\t') { space = (r > 0); continue; }
+    if (space && r < US_LINE_LEN - 1) reason[r++] = ' ';
+    space = 0;
+    reason[r++] = *p;
+  }
+  reason[r] = 0;
+
+  p = reason;
+  len = strlen(logname);
+  if (len > 0 && strncmp(p, logname, len) == 0) p += len;
+  while (*p == ' ') p++;
+
+  strncpy(S->end_reason, p, US_LINE_LEN);
+  S->end_reason[US_LINE_LEN] = 0;
+  S->end_score = (int32_t) score;
+  S->kills = (int32_t) c[C_KILLS];
+  if (strncmp(p, "a winner", 8) == 0) S->end_state = US_END_WON;
+  else if (strncmp(p, "quit", 4) == 0) S->end_state = US_END_QUIT;
+  else S->end_state = US_END_DIED;
 }
 
 /* ---- map ---- */
@@ -464,6 +553,7 @@ ActionType get_normal_input(void)
   int ch;
 
   if (++commands % CKP_INTERVAL == 0) checkpoint();
+  note_run();
 
   set_input_mode(US_INPUT_COMMAND, NULL, 0);
   while (Event == ACTION_NULL)
@@ -484,6 +574,7 @@ char get_prompt_input(char *prompt, char *answers, int ShowCursor)
 {
   int ch;
 
+  note_game_end(prompt, answers);
   Print(prompt);
   set_input_mode(US_INPUT_PROMPT, answers, ShowCursor);
   for (;;)
@@ -735,6 +826,7 @@ void Printc(char ch)
 void Print(char *string)
 {
   if (string == NULL || *string == 0) return;
+  note_kill(string);
   while (*string) Printc(*string++);
   publish();
 }
