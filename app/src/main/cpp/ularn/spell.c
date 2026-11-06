@@ -39,6 +39,7 @@
 #include "itm.h"
 #include "wild.h"
 #include "wild_hats.h"
+#include "wild_perks.h"
 
 /* =============================================================================
  * Exported variables
@@ -1985,8 +1986,8 @@ void cast(void)
       {
         if (spelknow[i])
         {
-          c[SPELLS]--;
           Printf(" (%s)", spelname[i]);
+          if (!wild_perks_free_spell()) c[SPELLS]--;   /* Wild Edition: Bookworm */
           wild_spell(i);   /* Wild Edition */
           speldamage(i);
           Found = 1;

@@ -85,6 +85,7 @@
 #include "wild.h"
 #include "wild_hats.h"
 #include "wild_pets.h"
+#include "wild_perks.h"
 #include "monster.h"
 #include "dungeon.h"
 #include "dungeon_obj.h"
@@ -1074,6 +1075,7 @@ void recalc (void)
 
   if (c[SHIELD] >= 0 && iven[c[SHIELD]] == OSHIELD)
     c[AC] += 2 + ivenarg[c[SHIELD]];
+  c[AC] += wild_perks_ac();   /* Wild Edition: Thick Skin */
 
   c[LANCEDEATH] = 0;
 
@@ -1133,6 +1135,7 @@ void recalc (void)
     }
   }
   c[WCLASS] += c[MOREDAM];
+  c[WCLASS] += wild_perks_wc();   /* Wild Edition: Glass Cannon */
 
   /*  now for regeneration abilities based on rings */
   c[REGEN]=1;

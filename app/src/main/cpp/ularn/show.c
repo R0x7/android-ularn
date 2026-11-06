@@ -40,6 +40,7 @@
 #include "itm.h"
 #include "show.h"
 #include "wild_hats.h"
+#include "wild_perks.h"
 
 /* =============================================================================
  * Local variables
@@ -125,6 +126,41 @@ static void seepage(void)
       lincount = 0;
       more();
       ClearText();
+    }
+  }
+}
+
+/* =============================================================================
+ * FUNCTION: wild_show_perks
+ *
+ * DESCRIPTION:
+ * Wild Edition: lists the level-up perks (compat/wild_perks.c) after the
+ * potions on the known-items page, paginated like the lists above it.
+ * Prints nothing when the character has no perks (or the feature is off).
+ */
+static void wild_show_perks(void)
+{
+  int i, any = 0;
+
+  for (i = 0; i < PERK_COUNT; i++)
+    if (wild_perk_owned_name(i) != NULL) any = 1;
+  if (!any) return;
+
+  lincount += 3;
+  if (count != 0)
+  {
+    count = 2;
+    seepage();
+  }
+
+  Print("\nYour perks are:\n\n");
+  count = 0;
+  for (i = 0; i < PERK_COUNT; i++)
+  {
+    if (wild_perk_owned_name(i) != NULL)
+    {
+      Printf("%-26s", wild_perk_owned_name(i));
+      seepage();
     }
   }
 }
@@ -646,6 +682,8 @@ void seemagic(int arg)
       seepage();
     }
   }
+
+  wild_show_perks();   /* Wild Edition: level-up perks */
 
   if (lincount!=0) more();
 

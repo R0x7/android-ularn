@@ -46,6 +46,7 @@
 #include "wild_hats.h"
 #include "wild_coin.h"
 #include "wild_fishing.h"
+#include "wild_perks.h"
 
 /* =============================================================================
  *
@@ -376,7 +377,7 @@ static void dnditem(int i)
     Printf("%s", objectname[(int) itm[i].obj]);
   }
   MoveCursor(x+31, y);
-  Printf("%6ld", wild_hats_price((long) (itm[i].price*10L)));   /* Wild Edition: party hat */
+  Printf("%6ld", wild_perks_price(wild_hats_price((long) (itm[i].price*10L))));   /* Wild Edition: party hat, Haggler */
 }
 
 /* =============================================================================
@@ -508,7 +509,7 @@ void dndstore(void)
         outofstock();
       else if (pocketfull())
         handsfull();
-      else if (c[GOLD] < wild_hats_price(itm[i].price*10L))
+      else if (c[GOLD] < wild_perks_price(wild_hats_price(itm[i].price*10L)))
         nogold();
       else 
       {
@@ -516,7 +517,7 @@ void dndstore(void)
         if (itm[i].mem != 0)
           itm[i].mem[(int) itm[i].arg] = 1 ;
 
-        c[GOLD] -= wild_hats_price(itm[i].price*10L);
+        c[GOLD] -= wild_perks_price(wild_hats_price(itm[i].price*10L));
         itm[i].qty--;
         take(itm[i].obj,itm[i].arg);
         if (itm[i].qty==0)
@@ -1470,7 +1471,7 @@ void otradepost(void)
         else
         {
 
-          value = item_value(it, itarg);
+          value = wild_perks_sell(item_value(it, itarg));   /* Wild Edition: Haggler */
 
           if (value >= 0)
           {

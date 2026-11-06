@@ -52,6 +52,7 @@
 #include "monster.h"
 #include "wild.h"
 #include "wild_coin.h"
+#include "wild_perks.h"
 #include "dungeon.h"
 #include "sphere.h"
 #include "show.h"
@@ -1814,6 +1815,7 @@ int hitm(int x, int y, int amt, int SpellFlag)
       if ((amt = monster[monst].gold) > 0)
         dropgold(rnd(amt) + amt);
       dropsomething(x,y,monst);
+      if (wild_perks_lucky()) dropsomething(x,y,monst);   /* Wild Edition: Lucky */
     }
     show1cell(x,y);
     showcell(playerx,playery);

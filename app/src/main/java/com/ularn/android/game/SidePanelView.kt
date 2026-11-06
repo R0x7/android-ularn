@@ -107,6 +107,27 @@ class SidePanelView(context: Context, private val stateOf: () -> GameState?) : V
             y += h + dp(4f)
         }
 
+        // --- level-up perks (Wild Edition; bits from compat/wild_perks.c)
+        val perks = PERK_NAMES.filterIndexed { i, _ -> s.perkBits and (1 shl i) != 0 }
+        if (perks.isNotEmpty()) {
+            y += dp(8f)
+            y = header(canvas, "PERKS", x0, y, w)
+            ui.textSize = dp(11f)
+            val h = dp(20f)
+            var cx = x0
+            for (name in perks) {
+                val cw = ui.measureText(name) + dp(12f)
+                if (cx > x0 && cx + cw > x0 + w) { cx = x0; y += h + dp(4f) }
+                fill.color = Color.argb(200, 30, 50, 70)
+                canvas.drawRoundRect(cx, y, cx + cw, y + h, h / 2, h / 2, fill)
+                ui.color = Color.rgb(140, 200, 255)
+                canvas.drawText(name, cx + dp(6f), y + h / 2 - (ui.descent() + ui.ascent()) / 2, ui)
+                cx += cw + dp(4f)
+            }
+            y += h + dp(4f)
+            ui.textSize = dp(13f)
+        }
+
         // --- level overview
         y += dp(8f)
         y = header(canvas, "MAP", x0, y, w)
@@ -142,6 +163,15 @@ class SidePanelView(context: Context, private val stateOf: () -> GameState?) : V
     }
 
     private fun rowH() = dp(19f)
+
+    companion object {
+        /** Perk names by bit index; mirrors perk_name[] in compat/wild_perks.c
+         *  (bit i of [GameState.perkBits] = perk i). Bits 10..15 aren't perks. */
+        private val PERK_NAMES = listOf(
+            "Magnet Hands", "Thick Skin", "Vampiric", "Bookworm", "Lucky",
+            "Nimble", "Haggler", "Glass Cannon", "Second Wind", "Night Owl",
+        )
+    }
 
     private fun header(canvas: Canvas, label: String, x: Float, y: Float, w: Float): Float {
         bold.textSize = dp(11f); bold.color = dim
