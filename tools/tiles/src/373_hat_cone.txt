@@ -1,0 +1,36 @@
+# tile 373: traffic cone on the floor (Wild Edition: hats)
+# generated shapes, hand-tuned palette; '.' is transparent
+# O=#f09a48 Q=#5c2a0a W=#eeeae0 k=#426b6b m=#000000 o=#d8701c
+# q=#9c4a12 w=#bdb8ad
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkmmkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkmOqmkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkmOqmkkkkkkkkkkkkkk
+kkkkkkkkkkkkkmOooqmkkkkkkkkkkkkk
+kkkkkkkkkkkkkmOooqmkkkkkkkkkkkkk
+kkkkkkkkkkkkkmOooqmkkkkkkkkkkkkk
+kkkkkkkkkkkkmWWWWwwmkkkkkkkkkkkk
+kkkkkkkkkkkkmWWWWwwmkkkkkkkkkkkk
+kkkkkkkkkkkmWWWWWwwwmkkkkkkkkkkk
+kkkkkkkkkkkmOOoooqqqmkkkkkkkkkkk
+kkkkkkkkkkkmOOoooqqqmkkkkkkkkkkk
+kkkkkkkkkkmOOOooooqqqmkkkkkkkkkk
+kkkkkkkkkkmWWWWWWWwwwmkkkkkkkkkk
+kkkkkkkkkmWWWWWWWWwwwwmkkkkkkkkk
+kkkkkkkkkmWWWWWWWWwwwwmkkkkkkkkk
+kkkkkkkkkmOOOOooooqqqqmkkkkkkkkk
+kkkkkkkkmOOOOooooooqqqqmkkkkkkkk
+kkkkkkmmmOOOOooooooqqqqmmmkkkkkk
+kkkkkmooooooqqqqqqqqQQQQQQmkkkkk
+kkkkkmooooooqqqqqqqqQQQQQQmkkkkk
+kkkkkkmmmmmmmmmmmmmmmmmmmmmmmmkk
+kkkkkkkkmmmmmmmmmmmmmmmmmmmmmmkk
+kkkkkkkkkkkmmmmmmmmmmmmmmmmkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk

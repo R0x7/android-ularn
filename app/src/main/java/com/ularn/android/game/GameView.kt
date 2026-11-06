@@ -500,6 +500,8 @@ class GameView(context: Context) : View(context) {
                 val right = (originX + (tx + 1) * t).roundToInt()
                 dstRect.set(left, top, right, bottom)
                 drawTile(canvas, s.tile(tx, ty))
+                // Wild Edition hats: the overlay tile sits on the player sprite (not when blind)
+                if (tx == s.playerX && ty == s.playerY && s.playerCursor && s.hatTile > 0) drawTile(canvas, s.hatTile)
                 val o = s.overlay(tx, ty)
                 if (o >= 0) drawTile(canvas, o)
                 if (tx == s.playerX && ty == s.playerY && s.playerCursor) drawTile(canvas, GameState.TILE_CURSOR)

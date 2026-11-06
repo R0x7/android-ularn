@@ -1,0 +1,36 @@
+# tile 376: party hat on the floor (Wild Edition: hats)
+# generated shapes, hand-tuned palette; '.' is transparent
+# C=#58d0e8 P=#f080b8 Y=#eedc37 b=#2c4890 h=#80285c k=#426b6b
+# m=#000000 p=#c84888 y=#b99018
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkmmkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkmYYmkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkmYYymkkkkkkkkkkkkk
+kkkkkkkkkkkkkkmYymkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkmPbmkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkmCbmkkkkkkkkkkkkkk
+kkkkkkkkkkkkkmCCphmkkkkkkkkkkkkk
+kkkkkkkkkkkkkmCpphmkkkkkkkkkkkkk
+kkkkkkkkkkkkmCPppbbmkkkkkkkkkkkk
+kkkkkkkkkkkkmPPpCbhmkkkkkkkkkkkk
+kkkkkkkkkkkkmPPCChhmkkkkkkkkkkkk
+kkkkkkkkkkkmPPCCphhbmkkkkkkkkkkk
+kkkkkkkkkkkmPCCpphbbmkkkkkkkkkkk
+kkkkkkkkkkkmCCpppbbhmkkkkkkkkkkk
+kkkkkkkkkkmCCPppCChhhmkkkkkkkkkk
+kkkkkkkkkkmCPPpCCphhbmkkkkkkkkkk
+kkkkkkkkkmCPPPCCpphbbhmkkkkkkkkk
+kkkkkkkkkmPPPCCpppbbhhmmkkkkkkkk
+kkkkkkkkkkmmmmmmmmmmmmmmmmkkkkkk
+kkkkkkkkkkkkmmmmmmmmmmmmmmkkkkkk
+kkkkkkkkkkkkkkmmmmmmmmmmkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
