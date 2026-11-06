@@ -23,10 +23,20 @@ concurrency:
 jobs:
   web:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      # A hung package mirror once stalled this for 20+ minutes: time-box it
+      # and retry a few times.
       - name: Install Emscripten
-        run: sudo apt-get update -q && sudo apt-get install -y -q emscripten
+        timeout-minutes: 12
+        run: |
+          for i in 1 2 3; do
+            timeout 240 sh -c 'sudo apt-get update -q -o Acquire::Retries=3 && sudo apt-get install -y -q -o Acquire::Retries=3 emscripten' && exit 0
+            echo "::warning::Emscripten install attempt $i failed or timed out; retrying"
+            sleep 10
+          done
+          exit 1
       - name: Build
         run: web/build.sh
       - uses: actions/upload-artifact@v4
