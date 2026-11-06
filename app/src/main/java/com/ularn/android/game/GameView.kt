@@ -360,7 +360,6 @@ class GameView(context: Context) : View(context) {
         ui.color = fgNormal
         val where = if (s.levelName == "H") "Home" else "Level ${s.levelName}"
         val line2 = "Lv ${s.playerLevel} ${s.levelTitle}  ·  Exp ${s.exp}  ·  $where"
-<<<<<<< HEAD
         val ticker = coinTicker(s)
         var w2 = w
         if (ticker != null) {
@@ -375,10 +374,7 @@ class GameView(context: Context) : View(context) {
             ui.color = fgNormal
             w2 = w - tw - dp(8f)
         }
-        drawFitted(canvas, line2, x0, y, w2, lineH, ui)
-=======
-        drawFitted(canvas, glitch.text(line2), x0, y, w, lineH, ui)
->>>>>>> worktree-agent-ad68dce1ebe135386
+        drawFitted(canvas, glitch.text(line2), x0, y, w2, lineH, ui)
         y += lineH
 
         // --- HUD line 3: stats
