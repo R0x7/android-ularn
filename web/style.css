@@ -1,0 +1,60 @@
+:root {
+  --bg: #0b0b0e;
+  --fg: #d8d8d0;
+  --dim: #8a8a84;
+  --accent: #e0b44c;
+  --btn: #23232b;
+  --btn-hi: #34343f;
+  --line: #3a3a44;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--fg); }
+body { font: 15px/1.4 system-ui, sans-serif; }
+#app { max-width: 1640px; margin: 0 auto; padding: 8px 16px env(safe-area-inset-bottom); }
+[hidden] { display: none !important; }
+
+h1 { font-size: 28px; margin: 24px 0 4px; }
+h1 .ed { font-size: 15px; color: var(--accent); font-weight: 500; }
+.sub, .hint { color: var(--dim); }
+#title { max-width: 520px; }
+#title label { display: block; margin: 12px 0; }
+#title input:not([type=checkbox]), #title select {
+  display: block; width: 100%; margin-top: 4px; padding: 8px; font: inherit;
+  background: var(--btn); color: var(--fg); border: 1px solid var(--line); border-radius: 6px;
+}
+#title label.check { display: flex; gap: 8px; align-items: center; }
+.buttons { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0; }
+button {
+  font: inherit; color: var(--fg); background: var(--btn); border: 1px solid var(--line);
+  border-radius: 6px; padding: 8px 14px; cursor: pointer; touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+}
+button:hover { background: var(--btn-hi); }
+button:active, button.on { background: var(--accent); color: #000; }
+.buttons button:first-child { border-color: var(--accent); }
+kbd { font: 13px ui-monospace, monospace; background: var(--btn); padding: 0 4px; border-radius: 3px; }
+a { color: var(--accent); }
+
+#hud { font: 13px ui-monospace, monospace; color: var(--dim); min-height: 1.4em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#hud b { color: var(--fg); font-weight: 600; }
+#mapwrap { position: relative; width: fit-content; max-width: 100%; min-width: min(100%, 640px); background: #000; border: 1px solid var(--line); overflow: hidden; }
+#map { display: block; image-rendering: pixelated; }
+pre { margin: 0; font: 13px/1.25 ui-monospace, "DejaVu Sans Mono", Menlo, monospace; white-space: pre; overflow-x: auto; }
+#text { position: absolute; inset: 0; padding: 6px; background: #000; overflow: auto; }
+#mapwrap.textmode { min-height: 420px; }
+#msgs { padding: 6px 2px; min-height: 6.5em; }
+#status { color: var(--dim); padding: 0 2px 6px; }
+.f1 { color: #ffd75f; } .f2 { color: #5fd7ff; } .f3 { color: #ff8787; }
+.f4 { font-weight: 700; color: #fff; } .f5 { background: var(--fg); color: #000; }
+.caret { background: var(--accent); color: #000; }
+
+#controls { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; padding-bottom: 12px; }
+#pad { display: grid; grid-template-columns: repeat(3, 52px); gap: 4px; }
+#pad button { height: 52px; padding: 0; font-size: 22px; }
+#keys { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; min-width: 200px; }
+#keys button { padding: 8px 10px; min-width: 52px; }
+#typer { position: fixed; left: -1000px; top: 0; opacity: 0; width: 1px; height: 1px; }
+@media (pointer: fine) and (min-width: 900px) { #controls { opacity: .85; } }
+#ended { padding: 40px 0; }
+#loading { color: var(--dim); }

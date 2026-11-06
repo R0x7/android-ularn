@@ -11,3 +11,7 @@ captures/
 .claude/
 tools/host/out/
 ularn-wild-local.apk
+
+# web build output
+web/site/
+web/obj/

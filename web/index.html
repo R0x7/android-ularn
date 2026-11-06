@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ularn Web</title>
+<meta name="description" content="Ularn 1.6.3a (Wild Edition) in the browser: the original C game compiled to WebAssembly.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <section id="title" hidden>
+    <h1>Ularn <span class="ed">Web · Wild Edition</span></h1>
+    <p class="sub">The 1.6.3a dungeon crawl, running in your browser. Saves stay in this browser.</p>
+    <label>Name <input id="name" maxlength="30" autocomplete="off"></label>
+    <label>Character
+      <select id="gender"><option value="female">Female</option><option value="male">Male</option></select>
+    </label>
+    <label class="check"><input type="checkbox" id="wild" checked> Wild Edition features (weather, pets, hats, LarnCoin…)</label>
+    <label class="check"><input type="checkbox" id="skipintro" checked> Skip the intro</label>
+    <div class="buttons">
+      <button id="continue" hidden>Continue saved game</button>
+      <button id="checkpoint" hidden>Restore checkpoint</button>
+      <button id="newgame">New game</button>
+    </div>
+    <p class="hint">Keyboard: arrows / numpad or <kbd>hjklyubn</kbd> move (Shift runs), <kbd>i</kbd> inventory,
+      <kbd>?</kbd> help, <kbd>S</kbd> save &amp; quit. On a phone use the buttons under the map.</p>
+    <p class="hint"><a href="https://github.com/R0x7/android-ularn">Source and Android app</a></p>
+  </section>
+
+  <section id="game" hidden>
+    <div id="hud"></div>
+    <div id="mapwrap"><canvas id="map"></canvas><pre id="text" hidden></pre></div>
+    <pre id="msgs"></pre>
+    <pre id="status"></pre>
+    <div id="controls">
+      <div id="pad">
+        <button data-k="y">↖</button><button data-k="k">↑</button><button data-k="u">↗</button>
+        <button data-k="h">←</button><button data-k="." title="Wait / act here">·</button><button data-k="l">→</button>
+        <button data-k="b">↙</button><button data-k="j">↓</button><button data-k="n">↘</button>
+      </div>
+      <div id="keys">
+        <button data-k="i">inv</button><button data-k="t">take</button><button data-k="w">wield</button>
+        <button data-k="W">wear</button><button data-k="q">quaff</button><button data-k="r">read</button>
+        <button data-k="c">cast</button><button data-k="d">drop</button><button data-k="e">eat</button>
+        <button data-k="o">open</button><button data-k="?">help</button><button data-k="S">save</button>
+        <button data-k="\x1b">esc</button><button data-k=" ">space</button><button data-k="\r">enter</button>
+        <button id="run" title="Next arrow runs">run</button><button id="kbd" title="Type letters">⌨</button>
+      </div>
+    </div>
+    <input id="typer" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Type keys">
+  </section>
+
+  <section id="ended" hidden>
+    <h2 id="endmsg">The game has ended.</h2>
+    <button id="again">Back to the title screen</button>
+  </section>
+
+  <p id="loading">Loading…</p>
+</div>
+<script src="game.js"></script>
+<script async src="ularn.js"></script>
+</body>
+</html>

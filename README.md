@@ -14,6 +14,9 @@
 > [`docs/WILD_EDITION_PLAN.md`](docs/WILD_EDITION_PLAN.md). The core game
 > is unchanged with every feature off.
 >
+> **Play in a browser:** https://r0x7.github.io/android-ularn/ (the same
+> game compiled to WebAssembly; see [`web/README.md`](web/README.md)).
+>
 > For developers: `tools/host/` plays the real game on Linux from a key
 > script (no device needed), `tools/tiles/` composes text-authored pixel
 > art onto the tile sheet. See `tools/host/README.md`.
