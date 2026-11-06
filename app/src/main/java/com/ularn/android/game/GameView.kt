@@ -181,10 +181,13 @@ class GameView(context: Context) : View(context) {
         override fun run() { caretOn = !caretOn; invalidate(); postDelayed(this, 530) }
     }
 
-    /** Text pages wider than the screen can be dragged sideways. */
+    /** Text pages wider than the screen can be dragged sideways; re-wrapped pages taller than it, up and down. */
     private var textPanX = 0f
     private var textPanMax = 0f
+    private var textPanY = 0f
+    private var textPanYMax = 0f
     private var lastDisplayMode = -1
+    private var lastPageId = ""
 
     override fun onAttachedToWindow() { super.onAttachedToWindow(); postDelayed(blink, 530) }
     override fun onDetachedFromWindow() { removeCallbacks(blink); endSwipe(); super.onDetachedFromWindow() }
@@ -204,7 +207,7 @@ class GameView(context: Context) : View(context) {
             if (lastBeep >= 0 && haptics) performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
             lastBeep = s.beepCount
         }
-        if (s.displayMode != lastDisplayMode) { textPanX = 0f; lastDisplayMode = s.displayMode }
+        if (s.displayMode != lastDisplayMode) { textPanX = 0f; textPanY = 0f; lastDisplayMode = s.displayMode }
         danger.onFrame(s, haptics)
         onFrame?.invoke(s)
 
@@ -252,6 +255,11 @@ class GameView(context: Context) : View(context) {
 
     // -------------------------------------------------------- text page
 
+    /** The page re-wrapped to the screen, cached until the game changes it. */
+    private var reflowed: TextReflow.Page? = null
+    private var reflowedSize = 0f
+    private var reflowKey = ""
+
     private fun drawTextPage(canvas: Canvas, s: GameState, area: RectF) {
         val rows = s.textLines
         // Fit the columns the page actually uses (shops ~75, inventory ~45).
@@ -262,23 +270,36 @@ class GameView(context: Context) : View(context) {
             if (n > usedCols) usedCols = n
         }
         val pad = dp(10f)
+        val availW = area.width() - 2 * pad
+        val availH = area.height() - 2 * pad
         mono.textSize = 100f
         val per100 = mono.measureText("M")
-        var size = (area.width() - 2 * pad) / (usedCols * per100) * 100f
-        size = size.coerceIn(sp(11f), sp(20f))      // never smaller than readable
+        var size = availW / (usedCols * per100) * 100f
+
+        // A new page (not just an updated one) starts at the top left.
+        val pageId = pageIdentity(s)
+        if (pageId != lastPageId) { textPanX = 0f; textPanY = 0f; lastPageId = pageId }
+
+        if (size < sp(MIN_TEXT_SP)) {
+            drawReflowedPage(canvas, s, area, pad, availW, availH)
+            return
+        }
+        textPanY = 0f; textPanYMax = 0f
+
+        size = size.coerceAtMost(sp(20f))
         mono.textSize = size
         var lineH = mono.fontSpacing
-        if (lineH * rows > area.height() - 2 * pad) {   // but do fit vertically
-            size = maxOf(dp(8f), size * (area.height() - 2 * pad) / (lineH * rows))
+        if (lineH * rows > availH) {   // but do fit vertically
+            size = maxOf(dp(8f), size * availH / (lineH * rows))
             mono.textSize = size
             lineH = mono.fontSpacing
         }
         monoBold.textSize = size
         val cellW = mono.measureText("M")
         val pageW = cellW * usedCols
-        textPanMax = maxOf(0f, pageW - (area.width() - 2 * pad))
+        textPanMax = maxOf(0f, pageW - availW)
         textPanX = textPanX.coerceIn(0f, textPanMax)
-        val x0 = area.left + pad + (if (textPanMax > 0) -textPanX else (area.width() - 2 * pad - pageW) / 2f)
+        val x0 = area.left + pad + (if (textPanMax > 0) -textPanX else (availW - pageW) / 2f)
         val y0 = area.top + pad
 
         canvas.save()
@@ -291,12 +312,86 @@ class GameView(context: Context) : View(context) {
         canvas.restore()
 
         if (textPanMax > 0) {   // scroll hint
-            val track = area.width() - 2 * pad
+            val track = availW
             val thumb = track * (track / pageW)
             val tx = area.left + pad + (track - thumb) * (textPanX / textPanMax)
             fill.color = Color.argb(90, 255, 255, 255)
             canvas.drawRoundRect(tx, area.bottom - dp(5f), tx + thumb, area.bottom - dp(2f), dp(2f), dp(2f), fill)
         }
+    }
+
+    /**
+     * The page is too wide to read at MIN_TEXT_SP (an 80-column page on a
+     * phone held upright): re-wrap it to the screen width instead, at the
+     * largest size where it also fits the height. If it doesn't fit even at
+     * MIN_TEXT_SP, it scrolls vertically.
+     */
+    private fun drawReflowedPage(canvas: Canvas, s: GameState, area: RectF, pad: Float, availW: Float, availH: Float) {
+        val key = "${s.seq}/${availW.toInt()}/${availH.toInt()}/$textScale"
+        if (key != reflowKey || reflowed == null) {
+            var sz = sp(MAX_REFLOW_SP)
+            var page: TextReflow.Page
+            while (true) {
+                mono.textSize = sz
+                val cols = (availW / mono.measureText("M")).toInt()
+                page = TextReflow.reflow(s.textLines, s.lineLen, { r, c -> s.textChar(r, c) }, { r, c -> s.textFmt(r, c) },
+                                         s.cursorY - 1, s.cursorX - 1, cols)
+                if (page.rows * mono.fontSpacing <= availH || sz <= sp(MIN_TEXT_SP)) break
+                sz = maxOf(sp(MIN_TEXT_SP), sz - dp(1f))
+            }
+            reflowed = page
+            reflowedSize = sz
+            reflowKey = key
+        }
+        val page = reflowed ?: return
+        mono.textSize = reflowedSize
+        monoBold.textSize = reflowedSize
+        val cellW = mono.measureText("M")
+        val lineH = mono.fontSpacing
+        val targetCols = (availW / cellW).toInt()
+        textPanMax = 0f
+        textPanX = 0f
+        val pageH = page.rows * lineH
+        textPanYMax = maxOf(0f, pageH - availH)
+        textPanY = textPanY.coerceIn(0f, textPanYMax)
+
+        val x0 = area.left + pad + (availW - cellW * targetCols) / 2f
+        val y0 = area.top + pad - textPanY
+        canvas.save()
+        canvas.clipRect(area)
+        for (r in 0 until page.rows) {
+            val base = y0 + r * lineH - mono.fontMetrics.ascent
+            if (base + lineH < area.top || base - lineH > area.bottom) continue
+            val chars = page.chars[r]
+            val fmts = page.fmts[r]
+            drawLine(canvas, x0, base, cellW, chars.size, { chars[it] }, { fmts[it] })
+        }
+        if (s.caret) drawCaret(canvas, x0 + page.cursorCol * cellW, y0 + page.cursorRow * lineH - mono.fontMetrics.ascent, cellW)
+        canvas.restore()
+
+        if (textPanYMax > 0) {   // scroll hint on the right edge
+            val track = area.height() - 2 * pad
+            val thumb = track * (availH / pageH)
+            val ty = area.top + pad + (track - thumb) * (textPanY / textPanYMax)
+            fill.color = Color.argb(90, 255, 255, 255)
+            canvas.drawRoundRect(area.right - dp(5f), ty, area.right - dp(2f), ty + thumb, dp(2f), dp(2f), fill)
+        }
+    }
+
+    /** Identifies "the same page": its first few lines of text. */
+    private fun pageIdentity(s: GameState): String {
+        val sb = StringBuilder()
+        sb.append(s.displayMode).append('|')
+        var found = 0
+        for (r in 0 until s.textLines) {
+            var any = false
+            for (c in 0 until s.lineLen) {
+                val ch = s.textChar(r, c)
+                if (ch != ' ' && ch.code != 0) { any = true; sb.append(ch) }
+            }
+            if (any) { sb.append('|'); if (++found == 3) break }
+        }
+        return sb.toString()
     }
 
     private fun drawLine(canvas: Canvas, x: Float, baseline: Float, cellW: Float,
@@ -717,8 +812,9 @@ class GameView(context: Context) : View(context) {
 
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent, dx: Float, dy: Float): Boolean {
             val s = state ?: return false
-            if (s.displayMode == GameState.DISPLAY_TEXT && textPanMax > 0f) {
+            if (s.displayMode == GameState.DISPLAY_TEXT && (textPanMax > 0f || textPanYMax > 0f)) {
                 textPanX = (textPanX + dx).coerceIn(0f, textPanMax)
+                textPanY = (textPanY + dy).coerceIn(0f, textPanYMax)
                 invalidate()
                 return true
             }
@@ -894,6 +990,10 @@ class GameView(context: Context) : View(context) {
         private const val SWIPE_THRESHOLD_DP = 28f
         /** A swipe that ends within this time is a flick (= run). */
         private const val FLICK_MS = 180L
+        /** Smallest text size for a text page before it is re-wrapped instead. */
+        private const val MIN_TEXT_SP = 11f
+        /** Largest text size for a re-wrapped page. */
+        private const val MAX_REFLOW_SP = 15f
         /** Hold this long after the first step before walking continuously. */
         private const val SWIPE_HOLD_MS = 320L
         private const val SWIPE_REPEAT_MS = 150L
