@@ -1,0 +1,36 @@
+# 381_old_boot (Wild Edition, fishing feature)
+# a worn brown boot, sole flapping
+# k=#426b6b s=#2f4c4c b=#000000 L=#8a6040 M=#6a4628 D=#4a3018
+# S=#2a2018 T=#c8b890 w=#8ac8e0
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkbbbbbbbbbkkkkkkkkkkkkkkk
+kkkkkkkbLLLMMMMMMbkkkkkkkkkkkkkk
+kkkkkkkbLLLLLLLLLbkkkkkkkkkkkkkk
+kkkkkkkbLLLMMMMMMbkkkkkkkkkkkkkk
+kkkkkkkbLLLMMTTMMbkkkkkkkkkkkkkk
+kkkkkkkbLLLMMMTTMbkkkkkkkkkkkkkk
+kkkkkkkbLLLMMMMMMbkkkkkkkkkkkkkk
+kkkkkkkbLLLMMTTMMbkkkkkkkkkkkkkk
+kkkkkkkbLLLMMMTTMbkkkkkkkkkkkkkk
+kkkkkkkbLLLMMMMMMbkkkkkkkkkkkkkk
+kkkkkkkbLLLMMTTMMbkkkkkkkkkkkkkk
+kkkkkkkbLLLMMMTTMbbkkkkkkkkkkkkk
+kkkkkkkbLLLMMMMMMMMbbbbbkkkkkkkk
+kkkkkkkbLLLMMMMMMMMMMMMMbbkkkkkk
+kkkkkkkbLLLMMMMMMMMMMMMMMMbkkkkk
+kkkkkkkbLLLMMMMMMMMMMbMMMMbkkkkk
+kkkkkkkbLLLDDDDDDDDDbbbDDDbkkwkk
+kkkkkkkbLLLDDDDDDDDDDbDDDDDbkwkk
+kkkkkkkbLLLDDDDDDDDDDDDDDDDbkkkk
+kkkkkkbSSSSSSSSSSSSSSSSSSSSSbkkk
+kkkkkkbSSSSSSSSSSSSSSSSSSSSSbkkk
+kkkkkkbSSSSSMSSSSSSSSSSSSSSSbkkk
+kkkkkkkbbbbbbbbbbbbbbbbbkkbbkkkk
+kkkkkkssssssssssssssssssssssskkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk

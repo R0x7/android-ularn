@@ -45,6 +45,7 @@
 #include "itm.h"
 #include "wild_hats.h"
 #include "wild_coin.h"
+#include "wild_fishing.h"
 
 /* =============================================================================
  *
@@ -64,7 +65,7 @@
  */
 
 /* max # items in the dnd store */
-#define DNDSIZE   98   /* 93 + the five Wild Edition hats */
+#define DNDSIZE   99   /* 93 + the five Wild Edition hats + the fishing rod */
 
 static int dnditm = 0;
 
@@ -209,7 +210,9 @@ static struct _itm itm[DNDSIZE] =  {
 { 120,  0,    OHATPROPELLER, 0,  1 },
 { 250,  0,    OHATWIZARD,    0,  1 },
 { 40,   0,    OHATPARTY,     0,  1 },
-{ 80,   0,    OHATTINFOIL,   0,  1 }
+{ 80,   0,    OHATTINFOIL,   0,  1 },
+/* Wild Edition fishing rod (hidden when the feature is off: wild_fishing_hidden()) */
+{ 25,   0,    OFISHINGROD,   0,  2 }
 };
 
 /* =============================================================================
@@ -352,7 +355,7 @@ static void dnditem(int i)
   y = ((i%IVENSIZE)>>1) + 5;
 
   MoveCursor(x, y);
-  if (itm[i].qty == 0 || wild_hats_hidden(itm[i].obj))
+  if (itm[i].qty == 0 || wild_hats_hidden(itm[i].obj) || wild_fishing_hidden(itm[i].obj))
   {
     Printf("%39s", "");
     return;
@@ -501,7 +504,7 @@ void dndstore(void)
       i += dnditm - 'a';
       if (i>=DNDSIZE)
         outofstock();
-      else if (itm[i].qty <= 0 || wild_hats_hidden(itm[i].obj))
+      else if (itm[i].qty <= 0 || wild_hats_hidden(itm[i].obj) || wild_fishing_hidden(itm[i].obj))
         outofstock();
       else if (pocketfull())
         handsfull();
@@ -1329,6 +1332,10 @@ int item_value(int it, int itarg)
       (it == OSAPPHIRE))
   {
     value = (long) 20 * itarg;
+  }
+  else if (wild_fishing_value(it) >= 0)
+  {
+    value = wild_fishing_value(it);   /* Wild Edition: the old boot */
   }
   else
   {

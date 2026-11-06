@@ -61,6 +61,8 @@ int wild_item_use(int obj);
 #define WX_WEATHER_NEXT 7
 #define WX_PERK_WIND_LEVEL 8
 #define WX_RADIO_TRACKS 9
+#define WX_KRAKEN_LEVEL 24    /* fishing: level+1 of the kraken's fountain, 0 = none */
+#define WX_FISH_ROD_LEVEL 25  /* fishing: dungeon level that gets the free rod */
 /* 10..63 free: claim one by adding a define here */
 extern int wild_extra[WILD_EXTRA_COUNT];
 

@@ -41,6 +41,7 @@
 #include "itm.h"
 #include "wild_hats.h"
 #include "wild_glitch.h"
+#include "wild_fishing.h"
 
 /* =============================================================================
  * Local functions
@@ -553,9 +554,14 @@ void ofountain(void)
   int x;
   int ans;
 
-  ans = get_prompt_input(
-          "\nDo you (d) drink, (w) wash yourself, or (i) ignore it? ",
-          "dwi\033", 1);
+  if (wild_fishing_can_fish())   /* Wild Edition: a fishing rod in the pack */
+    ans = get_prompt_input(
+            "\nDo you (d) drink, (w) wash yourself, (f) fish, or (i) ignore it? ",
+            "dwfi\033", 1);
+  else
+    ans = get_prompt_input(
+            "\nDo you (d) drink, (w) wash yourself, or (i) ignore it? ",
+            "dwi\033", 1);
 
   switch (ans)
   {
@@ -623,6 +629,11 @@ void ofountain(void)
     case 'i':
     case ESC:
       Print(" ignore");
+      break;
+
+    case 'f':   /* Wild Edition: only offered with a fishing rod */
+      Print("fish.");
+      wild_fishing_fish();
       break;
 
     case 'w':

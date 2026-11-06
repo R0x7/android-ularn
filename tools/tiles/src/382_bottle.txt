@@ -1,0 +1,36 @@
+# 382_bottle (Wild Edition, fishing feature)
+# a green glass bottle with a rolled note and a cork
+# k=#426b6b s=#2f4c4c b=#000000 L=#80c890 M=#3a8a50 D=#1e5a30
+# C=#b08850 P=#f0e6c0 p=#c8b888 X=#c42020
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkbbbkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkbCCCbkk
+kkkkkkkkkkkkkkkkkkkkkkkkbCCCCbkk
+kkkkkkkkkkkkkkkkkkkkkkkbMCCCCbkk
+kkkkkkkkkkkkkkkkkkkkkkbMLCCCbkkk
+kkkkkkkkkkkkkkkbbbbbbbMLMMMbkkkk
+kkkkkkkkkkkkbbbLLLLMMMLMMMbkkkkk
+kkkkkkkkkkkbLLLLLLMMMMMMMbkkkkkk
+kkkkkkkkkkbLLLLLLMMMMMMMbkkkkkkk
+kkkkkkkkbbLLLLLMPMPMMMMbkkkkkkkk
+kkkkkkkbLLLLLLMPPPMMMDDbkkkkkkkk
+kkkkkkkbLLLLMMPPPpPMDDbkkkkkkkkk
+kkkkkkbLLLLMPPPppMMDDDbkkkkkkkkk
+kkkkkbLLLMPPPXpMMDDDDbkkkkkkkkkk
+kkkkkbLLMPPPppMMDDDDbkkkkkkkkkkk
+kkkkbLLMPPppMMDDDDDDbkkkkkkkkkkk
+kkkkbMMMMpMMMDDDDDbbkkkkkkkkkkkk
+kkkkbMMMMMMDDDDDDbkkkkkkkkkkkkkk
+kkkkkbMMMMDDDDDDbkkkkkkkkkkkkkkk
+kkkkkkbMMDDDDbbbkkkkkkkkkkkkkkkk
+kkkkkkkbbbbbbkkkkkkkkkkkkkkkkkkk
+kkkkksssssssssssssssssskkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
