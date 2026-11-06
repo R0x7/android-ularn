@@ -5,11 +5,14 @@ package com.ularn.android.game
  *
  * The game appends {type, a, b, c} to a ring buffer in shared memory and bumps
  * a sequence number. [poll] reads everything since the last call and hands
- * each event to the listeners. Call it from the UI thread whenever the game
- * reports a change (GameSession.onChanged); a fresh game or a lost race just
- * drops events, which is fine - they only drive sound, toasts and the like.
+ * each event to the listeners, on the main thread. Call it whenever the game
+ * reports a change (GameSession.onChanged, which runs on the notify thread);
+ * a fresh game or a lost race just drops events, which is fine - they only
+ * drive sound, toasts and the like.
  */
 class GameEvents(private val state: () -> GameState?) {
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
+
     data class Event(val type: Int, val a: Int, val b: Int, val c: Int)
 
     fun interface Listener { fun onEvent(e: Event) }
@@ -23,7 +26,9 @@ class GameEvents(private val state: () -> GameState?) {
     /** Forget what was consumed: the next poll starts from "now" (new game). */
     fun reset() { lastSeq = -1 }
 
+    /** Listeners always run on the main thread: a poll from the notify thread is re-posted. */
     fun poll() {
+        if (android.os.Looper.myLooper() != android.os.Looper.getMainLooper()) { main.post { poll() }; return }
         val s = state() ?: return
         val seq = s.liveEventSeq()
         val n = s.eventSlots
