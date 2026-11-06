@@ -4,8 +4,8 @@
 
 The town above the dungeon has a clock and a sky.
 
-* **The clock:** a day is 1200 turns (an hour is 50 turns, starting at
-  midnight). Night is 21:00 to 05:59; you are told when dusk falls and when
+* **The clock:** a day is 1200 turns (an hour is 50 turns; a new game
+  starts at 08:00). Night is 21:00 to 05:59; you are told when dusk falls and when
   dawn breaks. The HUD shows a sun or a moon after the level name, and the
   map is tinted: warm at dawn and dusk, deep blue at night (never more than
   40% darker).
