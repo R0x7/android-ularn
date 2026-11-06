@@ -504,6 +504,8 @@ class GameView(context: Context) : View(context) {
                 if (tx == s.playerX && ty == s.playerY && s.playerCursor && s.hatTile > 0) drawTile(canvas, s.hatTile)
                 val o = s.overlay(tx, ty)
                 if (o >= 0) drawTile(canvas, o)
+                // Wild Edition pets: a little heart on your pet
+                if (s.petX >= 0 && tx == s.petX && ty == s.petY) drawTile(canvas, TILE_PET_HEART)
                 if (tx == s.playerX && ty == s.playerY && s.playerCursor) drawTile(canvas, GameState.TILE_CURSOR)
             }
         }
@@ -797,6 +799,7 @@ class GameView(context: Context) : View(context) {
 
     companion object {
         private const val SWIPE_THRESHOLD_DP = 28f
+        private const val TILE_PET_HEART = 397
         /** A swipe that ends within this time is a flick (= run). */
         private const val FLICK_MS = 180L
         /** Hold this long after the first step before walking continuously. */

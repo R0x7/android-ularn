@@ -1,0 +1,35 @@
+# 378_egg (Wild Edition, pets feature): a speckled, faintly glowing egg
+# k=#426b6b b=#000000 L=#fff6d8 E=#e8dcb0 e=#c4b48a d=#8c8060 s=#8a5a9a S=#5c3a6c
+# g=#9ad8c0 G=#5f9488
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkGGGkkkkkkkkkkkkkkk
+kkkkkkkkkkkkGGgggGGkkkkkkkkkkkkk
+kkkkkkkkkkGGgbbbbbgGGkkkkkkkkkkk
+kkkkkkkkkGGgbLLLLLbgGGkkkkkkkkkk
+kkkkkkkkkGgbLLLLLEEbgGkkkkkkkkkk
+kkkkkkkkGgbLLLLLEEEEbgGkkkkkkkkk
+kkkkkkkGgbLLLLLEEsEEEbgGkkkkkkkk
+kkkkkkkGbbLLsLEEEEEEEbbGkkkkkkkk
+kkkkkkGgbLLLLEEEEEEEEEbgGkkkkkkk
+kkkkkkGgbLLLLEEEEEEEEEbgGkkkkkkk
+kkkkkkGbLLLLEEEsEEEsEeebGkkkkkkk
+kkkkkGgbLLLEEEEEEEEEeeebgGkkkkkk
+kkkkkGgbLLEsEEEEEEEeeeebgGkkkkkk
+kkkkkGgbLEEEEEEEEEeeeeebgGkkkkkk
+kkkkkGbLEEEEEEEEEeeeeeedbGkkkkkk
+kkkkkGbEEEEEEEsEeeeeSeddbGkkkkkk
+kkkkkGbEEEEEEEEeeeeeedddbGkkkkkk
+kkkkkGgbEEssEEeeeeeedddbgGkkkkkk
+kkkkkGgbEEEEEeeeeeeddSsbgGkkkkkk
+kkkkkGgbEEEEeeeeSedddddbgGkkkkkk
+kkkkkkGbbEEeeeeeedddddbbGkkkkkkk
+kkkkkkGgbEeeeeeedddSddbgGkkkkkkk
+kkkkkkkGgbeeeSeddddddbgGkkkkkkkk
+kkkkkkkGGbbeeeddddddbbGGkkkkkkkk
+kkkkkkkkGGgbbdddddbbgGGkkkkkkkkk
+kkkkkkkkkGGggbbbbbggGGkkkkkkkkkk
+kkkkkkkkkkkGGGgggGGGkkkkkkkkkkkk
+kkkkkkkkkkkkkkGGGkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk

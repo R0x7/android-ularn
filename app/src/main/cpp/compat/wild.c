@@ -310,7 +310,8 @@ int wild_debug(void)
 int wild_is_pet(int x, int y)
 {
   return wild_on(WILDF_PETS) && wild_extra[WX_PET_LEVEL] == level + 1 &&
-         c[WILD_PET_MON] != 0 && wild_extra[WX_PET_X] == x && wild_extra[WX_PET_Y] == y;
+         c[WILD_PET_MON] != 0 && wild_extra[WX_PET_X] == x && wild_extra[WX_PET_Y] == y &&
+         x >= 0 && x < MAXX && y >= 0 && y < MAXY && mitem[x][y].mon == c[WILD_PET_MON];
 }
 
 int wild_free_cell(int *x, int *y)
