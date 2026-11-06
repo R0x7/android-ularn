@@ -25,7 +25,24 @@ void wild_cards_turn(void) {}
 void wild_cards_new_level(int lev) { (void) lev; }
 void wild_cards_leaving_level(int lev) { (void) lev; }
 void wild_cards_make_level(int lev) { (void) lev; }
-void wild_cards_kill(int monst, int x, int y) { (void) monst; (void) x; (void) y; }
+/* Drop odds, in percent. The first kill of a species always drops a card so
+ * the album fills at a steady pace; repeats are rarer, and any drop can be a
+ * holo. The album itself lives in the app (cards/CardAlbum.kt): the game only
+ * announces the drop, it keeps no card state beyond WILD_CARD_LAST. */
+#define CARD_REPEAT_PCT 15
+#define CARD_HOLO_PCT    5
+
+void wild_cards_kill(int monst, int x, int y)
+{
+  int holo;
+  (void) x; (void) y;
+  if (monst <= 0 || monst >= MONST_COUNT) return;
+  /* wild_kill() has already counted this kill, so 1 means "first one". */
+  if (wild_kill_count(monst) > 1 && rnd(100) > CARD_REPEAT_PCT) return;
+  holo = rnd(100) <= CARD_HOLO_PCT;
+  c[WILD_CARD_LAST] = monst;   /* saved with the character; handy when debugging */
+  wild_event(US_EV_WILD_CARD, monst, holo, 0);
+}
 void wild_cards_level_up(int newlevel) { (void) newlevel; }
 void wild_cards_take(int obj, int arg) { (void) obj; (void) arg; }
 int  wild_cards_object(int obj) { (void) obj; return 0; }

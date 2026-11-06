@@ -109,6 +109,11 @@ void wild_kill(int monst, int x, int y)
   EACH(kill, (monst, x, y))
 }
 
+int wild_kill_count(int monst)
+{
+  return (monst > 0 && monst < MONST_COUNT) ? kill_counts[monst] : 0;
+}
+
 void wild_level_up(int newlevel)
 {
   wild_event(US_EV_LEVEL_UP, newlevel, 0, 0);

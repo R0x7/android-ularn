@@ -116,6 +116,11 @@ class Settings(context: Context) {
         get() = p.getInt("wildFlags", WILDF_ALL)
         set(v) = p.edit().putInt("wildFlags", v and WILDF_ALL).apply()
 
+    /** Trading cards: pop up the card when one drops. */
+    var cardToasts: Boolean
+        get() = p.getBoolean("cardToasts", true)
+        set(v) = p.edit().putBoolean("cardToasts", v).apply()
+
     fun wild(bit: Int) = (wildFlags and bit) != 0
     fun setWild(bit: Int, on: Boolean) { wildFlags = if (on) wildFlags or bit else wildFlags and bit.inv() }
 
