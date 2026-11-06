@@ -68,9 +68,21 @@ are queued in the browser and sent next time. The game runs in the player's
 browser, so a determined player could still post a fake score; the table can
 be edited by hand in the Supabase dashboard.
 
+## Layout
+
+The game fills the browser window. The map is drawn at the largest whole
+number of pixels per tile that fits (up to 72); where that would be under
+14px (phones) it zooms in and follows the player instead. Below it is a
+scrollable message log (Ularn only shows 5 lines; older ones are kept and
+dimmed). Text pages (help, shops, inventory) are scaled to fill the play
+area. On screens wider than 1000px a side panel shows the character,
+active effects, inventory and a key reference. The top bar has HP / spell
+bars and toggles for the side panel, full screen and the on-screen buttons
+(on by default only on touch screens).
+
 ## Not ported yet
 
-From the Android front end: the side panel, minimap, spell picker, context
+From the Android front end: the minimap, spell picker, context
 action button, control-layout editor, save slots, run stats, and the Wild
 Edition extras drawn by the app (chiptune radio/sounds, weather and
 day/night effects, glitch visuals, Polaroid photo mode, trading-card
