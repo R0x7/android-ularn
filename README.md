@@ -90,6 +90,11 @@ Requires Android 7.0+ (API 24). Builds for arm64-v8a, armeabi-v7a and x86_64.
 - **Tablets and foldables:** on a wide screen a side panel shows your stats,
   effects, the level overview and your inventory; it follows fold/unfold and
   split screen (toggle in Settings).
+- **Text pages** (help, shops, bank, scores) are laid out for an 80-column
+  terminal. When a page is too wide to read on your screen (a phone held
+  upright), it is re-wrapped to fit: paragraphs flow to the screen width and
+  two-column price lists become one column. Drag to scroll if it is still
+  taller than the screen.
 - **Hardware / Bluetooth keyboards** work directly; arrow keys and the numpad
   move (toggle in Settings).
 - **Save slots:** the start screen lists your slots with each character's
