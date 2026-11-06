@@ -11,7 +11,9 @@ android {
         applicationId = "com.ularn.android"
         minSdk = 24
         targetSdk = 35
-        versionCode = 4
+        // CI numbers each build (GITHUB_RUN_NUMBER) so every new APK is a
+        // higher version than the last and Android treats it as an update.
+        versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.plus(100) ?: 4
         versionName = "2.2 (Ularn 1.6.3a)"
 
         ndk {
