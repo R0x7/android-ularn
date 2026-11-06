@@ -208,7 +208,9 @@ class GameView(context: Context) : View(context) {
         onFrame?.invoke(s)
 
         buildChips(s)
-        val chipH = if (chips.isEmpty()) 0f else maxOf(dp(44f), sp(40f))
+        // On the map the answer bar's room is always kept, so a prompt (stepping
+        // on a potion, "wield what?") doesn't shrink the map and make it jump.
+        val chipH = if (chips.isEmpty() && s.displayMode == GameState.DISPLAY_TEXT) 0f else maxOf(dp(44f), sp(40f))
         val area = RectF(content.left, content.top, content.right, content.bottom - chipH)
 
         if (s.displayMode == GameState.DISPLAY_TEXT) drawTextPage(canvas, s, area)
@@ -363,24 +365,22 @@ class GameView(context: Context) : View(context) {
         drawFitted(canvas, stats, x0, y, w, lineH, ui)
         y += lineH
 
-        // --- effects
+        // --- effects (the row is always kept so the map doesn't jump when one starts or ends)
         val active = GameState.EFFECT_NAMES.filterIndexed { i, _ -> s.effects and (1 shl i) != 0 }
-        if (active.isNotEmpty()) {
-            ui.textSize = sp(11f)
-            var cx = x0
-            val h = sp(18f)
-            for (name in active) {
-                val cw = ui.measureText(name) + dp(12f)
-                if (cx + cw > x1) break
-                fill.color = if (highContrast) Color.BLACK else Color.argb(200, 60, 50, 20)
-                canvas.drawRoundRect(cx, y + dp(1f), cx + cw, y + dp(1f) + h, h / 2, h / 2, fill)
-                hcOutline(canvas, cx, y + dp(1f), cx + cw, y + dp(1f) + h, h / 2)
-                ui.color = if (highContrast) Color.WHITE else accent
-                canvas.drawText(name, cx + dp(6f), y + dp(1f) + h / 2 - (ui.descent() + ui.ascent()) / 2, ui)
-                cx += cw + dp(4f)
-            }
-            y += h + dp(4f)
+        ui.textSize = sp(11f)
+        val h = sp(18f)
+        var cx = x0
+        for (name in active) {
+            val cw = ui.measureText(name) + dp(12f)
+            if (cx + cw > x1) break
+            fill.color = if (highContrast) Color.BLACK else Color.argb(200, 60, 50, 20)
+            canvas.drawRoundRect(cx, y + dp(1f), cx + cw, y + dp(1f) + h, h / 2, h / 2, fill)
+            hcOutline(canvas, cx, y + dp(1f), cx + cw, y + dp(1f) + h, h / 2)
+            ui.color = if (highContrast) Color.WHITE else accent
+            canvas.drawText(name, cx + dp(6f), y + dp(1f) + h / 2 - (ui.descent() + ui.ascent()) / 2, ui)
+            cx += cw + dp(4f)
         }
+        y += h + dp(4f)
         y += dp(2f)
 
         // --- messages: the game's 5x80 message lines, reflowed
