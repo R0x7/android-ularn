@@ -1,0 +1,35 @@
+# tile 384: the null pointer, a scrambled half-missing creature (Wild Edition: glitch)
+# generated from fixed-seed shapes, hand-picked palette; '.' is transparent
+# k=#426b6b s=#2f4c4c b=#000000 M=#c43cb4 m=#7a1f70 Y=#e0c848 y=#9c8424 C=#48c8c0 c=#2a7c78 W=#f0f0f0
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkYkkkkkkkbbbbbbbkkkkkkkkkkkkkkk
+kkkkkkkkkbYyyMmmMbmkkkkkkkkkkkkk
+kkkkkkkkkbYYyMMmbMbkkkkkMkkkkkkk
+kkkkkkkkkbyyymmmmbmbkkkkkkkkkkkk
+kkkkkkkkkbCWWWCcYYmbkkkkkkkkkkkk
+kkkkkkkkkbCWWbCcWWybkkkkkkkkkkkk
+kkkkkkkkkbcWWWccWbybbbkkkkkkkkkk
+kkkkkkkkkbCCcYYyWWcMMmbkkkkkkkkk
+kkkkkkkkkbCCcYYyCCyMMmbkkkkkkkkk
+kkkkkkkkkbCccyyycccmmmbkkkkkkkkk
+kkkkkkkYbyMMmCCcCCcYmyCbckkkkkkk
+kkkkkkkbYbMMmCCcCCcYyybCbkkkkkkk
+kkkkkkkkbybymmmccccccyyycbcbkkkk
+kkkkkCkkbCCcMMmYYyMMmMMmYYybkkkk
+kkkkkkbMCcMMmYYyMMmMMmcYybkkkkkk
+kkkkkkbcccmmmyyymmmmmmyyCbkkkkkk
+kkkkkkbYYyYYyYYybbbMYmMMmbMkkkkk
+kkkkkkbYYyYYyYYybkbMMmMMmbkkkkkk
+kkkkkkbyyyyyyyyybkbmmmmmYbkkkkkk
+kkkkkkkbbbYYyCCcYbyYYyMMmbkkYkkk
+kkkkkkkkkbYYyCCcbYbYYyMMmbkkkkkk
+kkkkkkkkkbyyycccCbyyyymmmbkkkkkk
+kkkkkkkkkbYYybbbbkbMbmCCcbkkkkkk
+kkkkkkkkkbYmybkkkkkbMbCCcbkkkkkk
+kkkkkkkkkbyymbkkkkkmbmcccbkkkkkk
+kkkkkkkkkkbbbkkkkkkkkbbbbkkkkkkk
+kkkkkkkksssssssssssssssssskkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk

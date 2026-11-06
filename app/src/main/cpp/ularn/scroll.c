@@ -30,6 +30,7 @@
 #include "dungeon_obj.h"
 #include "monster.h"
 #include "itm.h"
+#include "wild_glitch.h"
 
 /* =============================================================================
  * Exported variables
@@ -140,6 +141,7 @@ static char scprob[SCROLL_PROB_SIZE] =
  */
 int newscroll(void)
 {
+  if (wild_glitch_scroll()) return SSEGFAULT;   /* Wild Edition: the Glitch Realm */
   return (scprob[rund(SCROLL_PROB_SIZE)]);
 }
 
@@ -342,6 +344,10 @@ void read_scroll(int typ)
 
     case SLIFEPROT:
       c[LIFEPROT]++;
+      break;
+
+    case SSEGFAULT:   /* Wild Edition: the Glitch Realm */
+      wild_glitch_read_scroll();
       break;
   }
 }
