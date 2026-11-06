@@ -30,6 +30,7 @@
 #include "../shared_state.h"
 #include "ularn_android_panel.h"
 #include "wild.h"
+#include "wild_glitch.h"
 
 /* Wiring, set up by spawn.c in the child before ularn_main() runs. */
 UlarnShared *ularn_shared = NULL;
@@ -379,6 +380,9 @@ static void GetTile(int x, int y, int *TileId)
       k = know[x][y];
       *TileId = objtilelist[k];
     }
+    /* Wild Edition glitch: items (only) are drawn as other items */
+    if (*TileId == objtilelist[(int) know[x][y]])
+      *TileId = wild_glitch_object_tile(know[x][y], *TileId);
   }
 
   if (*TileId == objtilelist[OWALL])

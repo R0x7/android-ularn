@@ -66,6 +66,8 @@ class GameView(context: Context) : View(context) {
     // danger cues / stats
     /** Low-HP cues (HP bar pulse, vignette, vibration, hit flash). */
     val danger = DangerCues(this)
+    /** Wild Edition: the Glitch Realm's corruption pass over the map. */
+    val glitch = GlitchFx(this)
     /** Called once per drawn frame with fresh state (run statistics). */
     var onFrame: ((GameState) -> Unit)? = null
 
@@ -205,6 +207,7 @@ class GameView(context: Context) : View(context) {
         }
         if (s.displayMode != lastDisplayMode) { textPanX = 0f; lastDisplayMode = s.displayMode }
         danger.onFrame(s, haptics)
+        glitch.onFrame(s)
         onFrame?.invoke(s)
 
         buildChips(s)
@@ -353,14 +356,14 @@ class GameView(context: Context) : View(context) {
         ui.color = fgNormal
         val where = if (s.levelName == "H") "Home" else "Level ${s.levelName}"
         val line2 = "Lv ${s.playerLevel} ${s.levelTitle}  ·  Exp ${s.exp}  ·  $where"
-        drawFitted(canvas, line2, x0, y, w, lineH, ui)
+        drawFitted(canvas, glitch.text(line2), x0, y, w, lineH, ui)
         y += lineH
 
         // --- HUD line 3: stats
         val stats = (0 until 6).joinToString("  ") { "${GameState.STAT_NAMES[it]} ${s.stat(it)}" } +
             "   AC ${s.ac}  WC ${s.wc}  Sp ${s.spells}/${s.spellMax}"
         ui.color = fgDim
-        drawFitted(canvas, stats, x0, y, w, lineH, ui)
+        drawFitted(canvas, glitch.text(stats), x0, y, w, lineH, ui)
         y += lineH
 
         // --- effects
@@ -492,6 +495,7 @@ class GameView(context: Context) : View(context) {
         // Whole-pixel edges, each tile ending exactly where the next begins: no seams.
         val originX = mapRect.left - camX
         val originY = mapRect.top - camY
+        glitch.begin(canvas, mapRect, x0, y0, x1, y1, t)
         for (ty in y0..y1) {
             val top = (originY + ty * t).roundToInt()
             val bottom = (originY + (ty + 1) * t).roundToInt()
@@ -499,14 +503,17 @@ class GameView(context: Context) : View(context) {
                 val left = (originX + tx * t).roundToInt()
                 val right = (originX + (tx + 1) * t).roundToInt()
                 dstRect.set(left, top, right, bottom)
+                glitch.shift(dstRect, ty)
                 drawTile(canvas, s.tile(tx, ty))
                 // Wild Edition hats: the overlay tile sits on the player sprite (not when blind)
                 if (tx == s.playerX && ty == s.playerY && s.playerCursor && s.hatTile > 0) drawTile(canvas, s.hatTile)
                 val o = s.overlay(tx, ty)
                 if (o >= 0) drawTile(canvas, o)
+                glitch.overlayAt(tx, ty).let { g -> if (g >= 0) tiles.getOrNull(g)?.let { canvas.drawBitmap(it, null, dstRect, glitch.overlayPaint) } }
                 if (tx == s.playerX && ty == s.playerY && s.playerCursor) drawTile(canvas, GameState.TILE_CURSOR)
             }
         }
+        glitch.end(canvas)
         canvas.restore()
         minimap.draw(canvas, s, mapRect, originX + (s.playerX + 0.5f) * t, originY + (s.playerY + 0.5f) * t, t)
     }

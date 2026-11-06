@@ -312,6 +312,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         if (::overlay.isInitialized) game.haptics = overlay.layout.haptics
         if (::overlay.isInitialized) updateMapReserve()
         game.danger.apply(settings)
+        game.glitch.reduce = settings.reduceGlitch
         applyA11y()
     }
 
@@ -700,6 +701,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         header("Wild features (new games start with these; a saved game keeps its own)")
         for ((bit, label) in Settings.WILD_FEATURES) check(label, settings.wild(bit)) { settings.setWild(bit, it) }
         check("Card drop toasts: show each card as it drops", settings.cardToasts) { settings.cardToasts = it }
+        check("Reduce glitch effects (no shaking or colour cycling)", settings.reduceGlitch) { settings.reduceGlitch = it }
         CueSettings.addTo(this, box, settings)
 
         AccessibilitySettingsUi.addTo(box, a11yPrefs) { applyA11y() }

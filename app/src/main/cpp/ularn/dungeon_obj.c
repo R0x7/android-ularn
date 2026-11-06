@@ -40,6 +40,7 @@
 #include "scores.h"
 #include "itm.h"
 #include "wild_hats.h"
+#include "wild_glitch.h"
 
 /* =============================================================================
  * Local functions
@@ -853,6 +854,7 @@ void oteleport(int err)
   {
     positionplayer();
   }
+  wild_glitch_teleport();   /* Wild Edition: 1% chance to corrupt reality */
   draws(0, MAXX, 0, MAXY);
   UpdateStatusAndEffects();
 }

@@ -50,7 +50,10 @@
 #define SANNIHILATE  21
 #define SPULVERIZE   22
 #define SLIFEPROT    23
-#define S_MAX        23  /* Greatest defined scroll number */
+/* Wild Edition (compat/wild_glitch.c): only made, and only named, while the
+ * WILDF_GLITCH feature is on; otherwise slot 24 stays an unused blank. */
+#define SSEGFAULT    24
+#define S_MAX        24  /* Greatest defined scroll number */
 
 /*
  * Names of all scrolls

@@ -121,6 +121,11 @@ class Settings(context: Context) {
         get() = p.getBoolean("cardToasts", true)
         set(v) = p.edit().putBoolean("cardToasts", v).apply()
 
+    /** Glitch Realm: no map slicing, hue cycling or animation (motion-sensitive players). */
+    var reduceGlitch: Boolean
+        get() = p.getBoolean("reduceGlitch", false)
+        set(v) = p.edit().putBoolean("reduceGlitch", v).apply()
+
     fun wild(bit: Int) = (wildFlags and bit) != 0
     fun setWild(bit: Int, on: Boolean) { wildFlags = if (on) wildFlags or bit else wildFlags and bit.inv() }
 
