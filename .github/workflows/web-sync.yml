@@ -26,6 +26,10 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    # Emscripten's own image (same version as Ubuntu 24.04's package, which
+    # the web build is tested with): no apt install that can hang.
+    container: emscripten/emsdk:3.1.6
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,8 +52,6 @@ jobs:
       - name: Warn if the push was refused
         if: steps.push.outcome == 'failure'
         run: echo "::warning::Could not push ${WEB_BRANCH} (probably a workflow file changed on ularn-wild). The site is still published from the merged code; merge ularn-wild into ${WEB_BRANCH} by hand to catch the branch up."
-      - name: Install Emscripten
-        run: sudo apt-get update -q && sudo apt-get install -y -q emscripten
       - name: Build
         run: web/build.sh
       - name: Publish to gh-pages
