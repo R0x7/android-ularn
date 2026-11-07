@@ -138,7 +138,21 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
                 val cut = insets.displayCutout
                 v.setPadding(cut?.safeInsetLeft ?: 0, cut?.safeInsetTop ?: 0, cut?.safeInsetRight ?: 0, cut?.safeInsetBottom ?: 0)
             }
+            if (Build.VERSION.SDK_INT >= 30) {
+                val ime = insets.getInsets(WindowInsets.Type.ime()).bottom
+                setImeHeight(if (insets.isVisible(WindowInsets.Type.ime())) maxOf(0, ime - v.paddingBottom) else 0)
+            }
             insets
+        }
+        // Before Android 11 there are no IME insets: measure how much of the
+        // game the visible window frame leaves out instead.
+        if (Build.VERSION.SDK_INT < 30) root.viewTreeObserver.addOnGlobalLayoutListener {
+            if (!keyboardShown) { setImeHeight(0); return@addOnGlobalLayoutListener }
+            val frame = android.graphics.Rect()
+            root.getWindowVisibleDisplayFrame(frame)
+            val loc = IntArray(2)
+            game.getLocationOnScreen(loc)
+            setImeHeight(maxOf(0, loc[1] + game.height - frame.bottom))
         }
 
         applySettings()
@@ -272,9 +286,9 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
             game.minimap.setAvoid(if (landscape) minOf(left, w * 0.3f) else 0f, if (landscape) minOf(right, w * 0.3f) else 0f)
             if (landscape) {
                 if (!settings.fitMapBesideControls) { left = 0f; right = 0f }
-                game.setReserve(minOf(left, w * 0.3f), minOf(right, w * 0.3f), 0f)
+                game.setReserve(minOf(left, w * 0.3f), minOf(right, w * 0.3f), imeHeight.toFloat())
             } else {
-                game.setReserve(0f, 0f, minOf(h - bottomTop + dp(4), h * 0.65f))
+                game.setReserve(0f, 0f, maxOf(minOf(h - bottomTop + dp(4), h * 0.65f), imeHeight.toFloat()))
             }
         }
     }
@@ -352,6 +366,16 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
     override fun onLayoutEdited() {}
 
     override fun onSelectionChanged(spec: ControlSpec?) = refreshEditBar()
+
+    /** Height of the on-screen keyboard over the game, in px (0 when hidden). */
+    private var imeHeight = 0
+
+    /** Keep the game's display, and so its prompt line, above the keyboard. */
+    private fun setImeHeight(px: Int) {
+        if (px == imeHeight) return
+        imeHeight = px
+        if (::overlay.isInitialized) updateMapReserve()
+    }
 
     private fun setKeyboard(show: Boolean) {
         keyboardShown = show
