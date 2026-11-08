@@ -1,119 +1,101 @@
 package com.ularn.android
 
 import android.content.Context
+import android.content.SharedPreferences
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KProperty
 
 /** App + game preferences. */
 class Settings(context: Context) {
     private val p = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
 
-    var playerName: String
-        get() = p.getString("name", "Adventurer")!!
-        set(v) = p.edit().putString("name", v).apply()
+    // Each preference is a property backed by one SharedPreferences key;
+    // writes are applied asynchronously, as before.
+    private fun bool(key: String, default: Boolean) =
+        pref({ getBoolean(key, default) }, { putBoolean(key, it) })
+    private fun int(key: String, default: Int) =
+        pref({ getInt(key, default) }, { putInt(key, it) })
+    private fun float(key: String, default: Float) =
+        pref({ getFloat(key, default) }, { putFloat(key, it) })
+    private fun string(key: String, default: String) =
+        pref({ getString(key, default) ?: default }, { putString(key, it) })
 
-    var female: Boolean
-        get() = p.getBoolean("female", false)
-        set(v) = p.edit().putBoolean("female", v).apply()
+    private fun <T> pref(
+        read: SharedPreferences.() -> T,
+        write: SharedPreferences.Editor.(T) -> Unit,
+    ) = object : ReadWriteProperty<Any?, T> {
+        override fun getValue(thisRef: Any?, property: KProperty<*>): T = p.read()
+        override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) =
+            p.edit().apply { write(value) }.apply()
+    }
+
+    var playerName by string("name", "Adventurer")
+
+    var female by bool("female", false)
 
     /** Difficulty for the next new game (the game's `-d` option); see [MAX_DIFFICULTY]. */
     var difficulty: Int
-        get() = p.getInt("difficulty", 0).coerceIn(0, MAX_DIFFICULTY)
-        set(v) = p.edit().putInt("difficulty", v.coerceIn(0, MAX_DIFFICULTY)).apply()
+        get() = storedDifficulty.coerceIn(0, MAX_DIFFICULTY)
+        set(v) { storedDifficulty = v.coerceIn(0, MAX_DIFFICULTY) }
+    private var storedDifficulty by int("difficulty", 0)
 
-    var skipIntro: Boolean
-        get() = p.getBoolean("skipIntro", false)
-        set(v) = p.edit().putBoolean("skipIntro", v).apply()
+    var skipIntro by bool("skipIntro", false)
 
-    var noNap: Boolean
-        get() = p.getBoolean("noNap", false)
-        set(v) = p.edit().putBoolean("noNap", v).apply()
+    var noNap by bool("noNap", false)
 
-    var noBeep: Boolean
-        get() = p.getBoolean("noBeep", false)
-        set(v) = p.edit().putBoolean("noBeep", v).apply()
+    var noBeep by bool("noBeep", false)
 
     /**
      * Ularn 1.6's "enhanced interface": doors open with 'o' + direction
      * instead of by walking into them, and 'O' opens a chest you stand on.
      */
-    var enhancedInterface: Boolean
-        get() = p.getBoolean("enhanced", false)
-        set(v) = p.edit().putBoolean("enhanced", v).apply()
+    var enhancedInterface by bool("enhanced", false)
 
     /** Tap a square on the map to step towards it (long-press to run). */
-    var tapToMove: Boolean
-        get() = p.getBoolean("tapMove", true)
-        set(v) = p.edit().putBoolean("tapMove", v).apply()
+    var tapToMove by bool("tapMove", true)
 
     /** Swipe on the map to step; hold to keep walking. */
-    var swipeToMove: Boolean
-        get() = p.getBoolean("swipeMove", true)
-        set(v) = p.edit().putBoolean("swipeMove", v).apply()
+    var swipeToMove by bool("swipeMove", true)
 
     /** A quick flick on the map runs instead of stepping. */
-    var flickToRun: Boolean
-        get() = p.getBoolean("flickRun", false)
-        set(v) = p.edit().putBoolean("flickRun", v).apply()
+    var flickToRun by bool("flickRun", false)
 
     /** See [ORIENTATIONS]. */
-    var orientation: Int
-        get() = p.getInt("orientation", 0)
-        set(v) = p.edit().putInt("orientation", v).apply()
+    var orientation by int("orientation", 0)
 
     /** Landscape: keep the map clear of the side controls. */
-    var fitMapBesideControls: Boolean
-        get() = p.getBoolean("fitBeside", true)
-        set(v) = p.edit().putBoolean("fitBeside", v).apply()
+    var fitMapBesideControls by bool("fitBeside", true)
 
     /** Hardware/Bluetooth keyboard arrow keys map to hjkl. */
-    var arrowsAsMoves: Boolean
-        get() = p.getBoolean("arrows", true)
-        set(v) = p.edit().putBoolean("arrows", v).apply()
+    var arrowsAsMoves by bool("arrows", true)
 
     /** Round minimap in a corner of the map (tap it for the whole level). */
-    var showMinimap: Boolean
-        get() = p.getBoolean("minimap", true)
-        set(v) = p.edit().putBoolean("minimap", v).apply()
+    var showMinimap by bool("minimap", true)
 
     /** Wide windows (tablets, foldables): stats / map / inventory panel beside the map. */
-    var sidePanel: Boolean
-        get() = p.getBoolean("sidePanel", true)
-        set(v) = p.edit().putBoolean("sidePanel", v).apply()
+    var sidePanel by bool("sidePanel", true)
 
     /** Map zoom, as tile size in dp; 0 = automatic. */
-    var tileDp: Float
-        get() = p.getFloat("tileDp", 0f)
-        set(v) = p.edit().putFloat("tileDp", v).apply()
+    var tileDp by float("tileDp", 0f)
 
     // danger cues / stats
     /** Low-HP cues start below this percentage of max HP. */
-    var dangerThresholdPct: Int
-        get() = p.getInt("dangerPct", 25)
-        set(v) = p.edit().putInt("dangerPct", v).apply()
+    var dangerThresholdPct by int("dangerPct", 25)
 
     /** Low HP: the HP bar pulses red. */
-    var dangerPulse: Boolean
-        get() = p.getBoolean("dangerPulse", true)
-        set(v) = p.edit().putBoolean("dangerPulse", v).apply()
+    var dangerPulse by bool("dangerPulse", true)
 
     /** Low HP: a red vignette around the map. */
-    var dangerVignette: Boolean
-        get() = p.getBoolean("dangerVignette", true)
-        set(v) = p.edit().putBoolean("dangerVignette", v).apply()
+    var dangerVignette by bool("dangerVignette", true)
 
     /** Vibrate once when HP falls below the threshold. */
-    var dangerVibrate: Boolean
-        get() = p.getBoolean("dangerVibrate", true)
-        set(v) = p.edit().putBoolean("dangerVibrate", v).apply()
+    var dangerVibrate by bool("dangerVibrate", true)
 
     /** Red flash (and a short buzz) when one hit takes 20% of max HP or more. */
-    var bigHitCue: Boolean
-        get() = p.getBoolean("bigHitCue", true)
-        set(v) = p.edit().putBoolean("bigHitCue", v).apply()
+    var bigHitCue by bool("bigHitCue", true)
 
     /** Show a toast when an achievement unlocks. */
-    var achievementToasts: Boolean
-        get() = p.getBoolean("achToasts", true)
-        set(v) = p.edit().putBoolean("achToasts", v).apply()
+    var achievementToasts by bool("achToasts", true)
 
     companion object {
         /** Highest difficulty the slider offers (the game itself accepts up to 100). */
