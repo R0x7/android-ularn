@@ -98,10 +98,18 @@ class Settings(context: Context) {
     var achievementToasts by bool("achToasts", true)
 
     // ---- Wild Edition ----
-    /** Feature mask passed to the game as ULARN_WILD (WILDF_* bits); default all on. */
+    /**
+     * Feature mask passed to the game as ULARN_WILD (WILDF_* bits); default all on.
+     * "wildKnown" records which bits existed when the mask was last saved, so a
+     * feature added in a later version starts switched on instead of reading as
+     * an unticked box (masks saved before it existed covered 0x7ff).
+     */
     var wildFlags: Int
-        get() = p.getInt("wildFlags", WILDF_ALL)
-        set(v) = p.edit().putInt("wildFlags", v and WILDF_ALL).apply()
+        get() {
+            val known = p.getInt("wildKnown", 0x7ff)
+            return (p.getInt("wildFlags", WILDF_ALL) or (WILDF_ALL and known.inv())) and WILDF_ALL
+        }
+        set(v) = p.edit().putInt("wildFlags", v and WILDF_ALL).putInt("wildKnown", WILDF_ALL).apply()
 
     /** Trading cards: pop up the card when one drops. */
     var cardToasts: Boolean
@@ -149,7 +157,8 @@ class Settings(context: Context) {
         const val WILDF_PERKS = 1 shl 8
         const val WILDF_WEATHER = 1 shl 9
         const val WILDF_PHOTO = 1 shl 10
-        const val WILDF_ALL = 0x7ff
+        const val WILDF_BOUNTY = 1 shl 11
+        const val WILDF_ALL = 0xfff
 
         /** Checkbox labels for the Settings "Wild features" section, in bit order. */
         val WILD_FEATURES = listOf(
@@ -164,6 +173,7 @@ class Settings(context: Context) {
             WILDF_PERKS to "Choose a perk on every level-up",
             WILDF_WEATHER to "Weather and day/night on the surface",
             WILDF_PHOTO to "Polaroid photo mode",
+            WILDF_BOUNTY to "Town bounty board: WANTED posters with gold rewards",
         )
 
         /** Highest difficulty the slider offers (the game itself accepts up to 100). */

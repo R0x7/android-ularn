@@ -41,6 +41,7 @@
 #include "show.h"
 #include "wild_hats.h"
 #include "wild_perks.h"
+#include "wild_bounty.h"
 
 /* =============================================================================
  * Local variables
@@ -163,6 +164,32 @@ static void wild_show_perks(void)
       seepage();
     }
   }
+}
+
+/* =============================================================================
+ * FUNCTION: wild_show_bounty
+ *
+ * DESCRIPTION:
+ * Wild Edition: the town crier's current WANTED poster
+ * (compat/wild_bounty.c), after the perks on the known-items page.
+ * Prints nothing when there is no poster (or the feature is off).
+ */
+static void wild_show_bounty(void)
+{
+  const char *text = wild_bounty_text();
+  if (text == NULL) return;
+
+  lincount += 3;
+  if (count != 0)
+  {
+    count = 2;
+    seepage();
+  }
+
+  Print("\nThe town bounty board:\n\n");
+  Print((char *) text);
+  count = 2;
+  seepage();   /* ends the line and pages like the lists above */
 }
 
 /* =============================================================================
@@ -684,6 +711,7 @@ void seemagic(int arg)
   }
 
   wild_show_perks();   /* Wild Edition: level-up perks */
+  wild_show_bounty();  /* Wild Edition: bounty board */
 
   if (lincount!=0) more();
 

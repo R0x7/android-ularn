@@ -3,8 +3,8 @@
 > This branch is **Ularn: Wild Edition**: the same port with a pile of
 > deliberately off-the-wall features bolted on (chiptune radio, monster
 > trading cards, vending machines, hats, a parody cryptocurrency, a glitch
-> realm, fishing, pets, level-up perks, weather and a Polaroid camera). It
-> installs beside the normal app as **"Ularn Wild"** with its own saves.
+> realm, fishing, pets, level-up perks, weather, a Polaroid camera and a
+> town bounty board). It installs beside the normal app as **"Ularn Wild"** with its own saves.
 >
 > **Play in your browser:** https://r0x7.github.io/android-ularn/ (no
 > install; the same game compiled to WebAssembly, with a shared top-100

@@ -70,6 +70,7 @@ This document is the brief every implementation agent works from. Read all of
 | 1<<8 | `WILDF_PERKS` | Level-up perks |
 | 1<<9 | `WILDF_WEATHER` | Weather and day/night on the surface |
 | 1<<10 | `WILDF_PHOTO` | Polaroid photo mode (Kotlin only) |
+| 1<<11 | `WILDF_BOUNTY` | Town bounty board (added after the first wave; docs/wild/bounty.md) |
 
 * C side: `wild_on(WILD_X)` returns non-zero when the bit is set. The mask
   arrives in the environment variable `ULARN_WILD` (decimal), read once in

@@ -10,7 +10,7 @@ enter, \\e escape, \\s space, and "{N:keys}" repeating keys N times
 
 Options:
   --seed N        reproducible run (ULARN_SEED)
-  --wild MASK     ULARN_WILD feature mask (default: all on, 2047); 0 = vanilla
+  --wild MASK     ULARN_WILD feature mask (default: all on, 4095); 0 = vanilla
   --class a..h    character class letter (default a)
   --quiet         print only messages that changed + events
   --keep          keep the temp HOME/workdir (printed) for inspection
@@ -78,7 +78,7 @@ def main():
         f.write("OPTION name:Tester,class:%s,gender:male,nowelcome,nonap,nobeep,noenhanced_interface\n"
                 % classes.get(cls, cls))
     env = dict(os.environ, HOME=home, USER="player", LOGNAME="player")
-    env["ULARN_WILD"] = wild if wild is not None else "2047"
+    env["ULARN_WILD"] = wild if wild is not None else "4095"
     if seed is not None: env["ULARN_SEED"] = seed
 
     lines = []

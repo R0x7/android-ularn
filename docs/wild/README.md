@@ -18,3 +18,4 @@ feature (a saved game keeps the set it was started with).
 | Pets | [pets.md](pets.md) | A mysterious egg hatches into a companion that follows and fights |
 | Level-up perks | [perks.md](perks.md) | Choose one of three roguelite perks on every level-up |
 | Atmosphere | [atmosphere.md](atmosphere.md) | Weather and day/night on the surface (lemming migrations!) and a Polaroid photo mode |
+| Bounty board | [bounty.md](bounty.md) | The town crier posts WANTED monsters with gold rewards |

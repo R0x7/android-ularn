@@ -19,7 +19,7 @@ add_library(ularn_game STATIC
         compat/wild_radio.c compat/wild_cards.c compat/wild_vending.c
         compat/wild_hats.c compat/wild_coin.c compat/wild_glitch.c
         compat/wild_fishing.c compat/wild_pets.c compat/wild_perks.c
-        compat/wild_weather.c)
+        compat/wild_weather.c compat/wild_bounty.c)
 
 # Hidden visibility: the game's globals (e.g. `dirname`, `index`) share names
 # with libc functions. Exported, the dynamic linker could bind the game's own

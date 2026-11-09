@@ -31,7 +31,8 @@
 #define WILDF_PERKS    (1 << 8)
 #define WILDF_WEATHER  (1 << 9)
 #define WILDF_PHOTO    (1 << 10)   /* Kotlin only; listed for completeness */
-#define WILDF_ALL      0x7ff
+#define WILDF_BOUNTY   (1 << 11)
+#define WILDF_ALL      0xfff
 
 /* Non-zero when feature `bit` is enabled for this character. */
 int wild_on(int bit);
@@ -63,7 +64,11 @@ int wild_item_use(int obj);
 #define WX_RADIO_TRACKS 9
 #define WX_KRAKEN_LEVEL 24    /* fishing: level+1 of the kraken's fountain, 0 = none */
 #define WX_FISH_ROD_LEVEL 25  /* fishing: dungeon level that gets the free rod */
-/* 10..63 free: claim one by adding a define here */
+#define WX_BOUNTY_MON     10  /* bounty: wanted species, 0 = no poster */
+#define WX_BOUNTY_GOLD    11  /* bounty: reward */
+#define WX_BOUNTY_CLAIMED 12  /* bounty: 1 = killed, collect in town */
+#define WX_BOUNTY_POSTED  13  /* bounty: gtime when the poster went up */
+/* 14..23 and 26..63 free: claim one by adding a define here */
 extern int wild_extra[WILD_EXTRA_COUNT];
 
 /* ---- hooks called by upstream code (see wild.c) ---- */
@@ -139,5 +144,6 @@ WILD_FEATURE_HOOKS(fishing)
 WILD_FEATURE_HOOKS(pets)
 WILD_FEATURE_HOOKS(perks)
 WILD_FEATURE_HOOKS(weather)
+WILD_FEATURE_HOOKS(bounty)
 
 #endif
