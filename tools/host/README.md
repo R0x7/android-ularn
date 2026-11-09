@@ -22,7 +22,7 @@ tools/host/smoke.sh                 # regression: new game, walk, dungeon, save,
   * `+` is upstream's create item (places it next to you), `_` max XP,
     `` ` `` debug mode.
 * `--seed N` makes the run reproducible (`ULARN_SEED`).
-* `--wild MASK` sets the feature mask (`ULARN_WILD`, default 2047 = all);
+* `--wild MASK` sets the feature mask (`ULARN_WILD`, default 4095 = all);
   `--wild 0` is the vanilla game.
 * `--quiet` prints only changed messages, text pages and events.
 * `--home DIR` reuses a HOME so you can save (`S`) in one run and restore in

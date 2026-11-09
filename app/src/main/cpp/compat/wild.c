@@ -52,7 +52,8 @@ int wild_on(int bit)
   if (wild_on(WILDF_FISHING)) wild_fishing_##F call; \
   if (wild_on(WILDF_PETS))    wild_pets_##F call; \
   if (wild_on(WILDF_PERKS))   wild_perks_##F call; \
-  if (wild_on(WILDF_WEATHER)) wild_weather_##F call;
+  if (wild_on(WILDF_WEATHER)) wild_weather_##F call; \
+  if (wild_on(WILDF_BOUNTY))  wild_bounty_##F call;
 
 /* First feature that returns non-zero handles it. Pets go before fishing so
  * eating a fish next to your pet feeds the pet instead. */
@@ -67,6 +68,7 @@ int wild_on(int bit)
   if (wild_on(WILDF_FISHING) && wild_fishing_##F call) return 1; \
   if (wild_on(WILDF_PERKS)   && wild_perks_##F call)   return 1; \
   if (wild_on(WILDF_WEATHER) && wild_weather_##F call) return 1; \
+  if (wild_on(WILDF_BOUNTY)  && wild_bounty_##F call)  return 1; \
   return 0;
 
 void wild_init(void)
@@ -79,7 +81,7 @@ void wild_init(void)
    * wild_new_character() (new game) or wild_restore() (saved game). */
   wild_radio_init();   wild_cards_init();   wild_vending_init(); wild_hats_init();
   wild_coin_init();    wild_glitch_init();  wild_fishing_init(); wild_pets_init();
-  wild_perks_init();   wild_weather_init();
+  wild_perks_init();   wild_weather_init();  wild_bounty_init();
 }
 
 void wild_new_character(void)
@@ -140,6 +142,7 @@ void wild_object(int obj)
   if (wild_on(WILDF_PETS)    && wild_pets_object(obj))    return;
   if (wild_on(WILDF_PERKS)   && wild_perks_object(obj))   return;
   if (wild_on(WILDF_WEATHER) && wild_weather_object(obj)) return;
+  if (wild_on(WILDF_BOUNTY)  && wild_bounty_object(obj))  return;
   wild_finditem(obj);
 }
 
