@@ -199,8 +199,17 @@ the save slot's folder `ularn163/slots/<n>/`, where Ularn keeps
 `ularn_player.sav`, `ularn_player.ckp` and `ularn.opt`; the app adds
 `slot.json` (name, level, depth, last played).
 
-## License
+## History, credits and license
 
-GPL v2, same as Ularn. See `LICENSE` and `app/src/main/cpp/ularn/COPYRIGHT`.
+Ularn is the work of Noah Morgan (Larn, 1986), Phil Cordier (Ularn), David
+Richerby, Josh Brandt and Josh Bressers (Ularn 1.5) and Julian Olds
+(Ularn 1.6). [HISTORY.md](HISTORY.md) gives the game's history, from
+[larn.org](https://larn.org/history/history), and a copyright note.
+
+This project claims no copyright in the game and is shared free and
+non-commercially only: Larn's original terms forbid making a profit from it.
+The 1.6 sources are released under the GPL v2 (see `LICENSE` and
+`app/src/main/cpp/ularn/COPYRIGHT`), but larn.org notes that this does not
+lift Larn's no-profit condition; see [HISTORY.md](HISTORY.md#copyright).
 The non-GPL modules in the 1.6.3a distribution (X11 menu library, Amiga helpers)
 are not used and not included.
