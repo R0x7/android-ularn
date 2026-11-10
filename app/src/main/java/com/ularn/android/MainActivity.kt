@@ -84,7 +84,6 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         if (Build.VERSION.SDK_INT >= 28) {
             window.attributes = window.attributes.apply {
                 layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
@@ -304,7 +303,13 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         if (::overlay.isInitialized) game.haptics = overlay.layout.haptics
         if (::overlay.isInitialized) updateMapReserve()
         game.danger.apply(settings)
+        applyKeepScreenOn()
         applyA11y()
+    }
+
+    private fun applyKeepScreenOn() {
+        val flag = WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+        if (settings.keepScreenOn) window.addFlags(flag) else window.clearFlags(flag)
     }
 
     private fun applyRotationSetting() {
@@ -676,7 +681,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         check("No beeping", settings.noBeep) { settings.noBeep = it }
         check("Enhanced interface: open doors with 'o', chests with 'O'", settings.enhancedInterface) { settings.enhancedInterface = it }
 
-        header("Screen rotation")
+        header("Screen")
         val rotation = Spinner(this).apply {
             adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, Settings.ORIENTATIONS.map { it.first })
             setSelection(settings.orientation.coerceIn(0, Settings.ORIENTATIONS.size - 1))
@@ -685,6 +690,7 @@ class MainActivity : Activity(), ControlsOverlay.Listener {
         box.addView(TextView(this).apply {
             text = "Portrait and landscape each keep their own control layout."; textSize = 12f; alpha = 0.7f
         })
+        check("Keep the screen on while the app is open", settings.keepScreenOn) { settings.keepScreenOn = it }
 
         header("Map")
         check("Swipe to step, hold to keep walking", settings.swipeToMove) { settings.swipeToMove = it }
